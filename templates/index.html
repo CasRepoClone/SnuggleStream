@@ -48,7 +48,7 @@
                     <form id="createForm" class="form">
                         <div class="form-group">
                             <label for="roomName">Room Name</label>
-                            <input type="text" id="roomName" placeholder="Movie Night" maxlength="60" required>
+                            <input type="text" id="roomName" placeholder="Movie Night" maxlength="20" required>
                         </div>
                         <div class="form-group">
                             <label>Video Source</label>
@@ -61,7 +61,7 @@
                         <div class="form-group source-panel" id="urlPanel">
                             <label for="videoUrl">Video URL</label>
                             <input type="url" id="videoUrl" placeholder="https://example.com/video.mp4">
-                            <span class="hint">Direct link to .mp4, .webm, or HLS stream (.m3u8)</span>
+                            <span class="hint">Direct link to a video file (.mp4, .webm, .mkv, .m3u8)</span>
                         </div>
                         <div class="form-group source-panel" id="filePanel" style="display: none;">
                             <label for="videoFile">Upload Video</label>
@@ -72,7 +72,7 @@
                                     <line x1="12" y1="3" x2="12" y2="15"></line>
                                 </svg>
                                 <p>Drop file here or <span class="link">browse</span></p>
-                                <span class="hint">MP4, WebM, MKV — up to 2 GB</span>
+                                <span class="hint">MP4, WebM, MKV — up to 15 GB</span>
                                 <input type="file" id="videoFile" accept="video/*,.mkv" hidden>
                             </div>
                             <div id="fileInfo" class="file-info" style="display:none;"></div>

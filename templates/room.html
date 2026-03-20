@@ -23,6 +23,10 @@
                 <span class="room-code-badge" id="roomCodeBadge" title="Click to copy">{{ room_code }}</span>
             </div>
             <div class="room-viewers">
+                <span class="host-badge" id="hostBadge" title="Room host">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <span id="hostName">Host</span>
+                </span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="9" cy="7" r="4"></circle>
@@ -57,10 +61,17 @@
                         <h3>No Video Loaded</h3>
                         <p>Add a video URL or upload a file below to start watching.</p>
                     </div>
+                    <!-- Loading Spinner -->
+                    <div class="video-loading" id="videoLoading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Loading video…</p>
+                    </div>
                     <!-- Video Player -->
                     <video id="videoPlayer" style="display: none;" playsinline>
                         Your browser does not support the video element.
                     </video>
+                    <!-- YouTube Player -->
+                    <div id="youtubePlayer" style="display: none;"></div>
                 </div>
 
                 <!-- Video Controls -->
@@ -108,7 +119,7 @@
                         <button class="tab" data-source="upload">Upload</button>
                     </div>
                     <div class="source-input" id="urlInput">
-                        <input type="url" id="videoUrlInput" placeholder="Paste video URL (mp4, webm, m3u8...)" >
+                        <input type="url" id="videoUrlInput" placeholder="https://youtube.com/watch?v=... or .mp4 URL" >
                         <button class="btn btn-sm" id="loadUrlBtn">Load</button>
                     </div>
                     <div class="source-input" id="uploadInput" style="display:none;">
@@ -148,10 +159,17 @@
     <!-- Toast container -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script>
-        window.ROOM_CODE = "{{ room_code }}";
-        window.USER_NAME = "{{ user.name }}";
-    </script>
+    <!-- Vote Overlay -->
+    <div id="voteOverlay" class="vote-overlay" style="display: none;">
+        <div class="vote-card">
+            <h2>Host Left — Vote for New Host</h2>
+            <p class="vote-subtitle">Video is paused until a new host is chosen. <span id="voteTimer"></span></p>
+            <div id="voteCandidates" class="vote-candidates"></div>
+            <p class="vote-hint">First Past The Post — each person gets one vote</p>
+        </div>
+    </div>
+
+    <div id="appData" data-room-code="{{ room_code }}" data-user-name="{{ user.name }}" hidden></div>
     <script src="/static/js/room.js"></script>
 </body>
 </html>

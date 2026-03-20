@@ -9,8 +9,8 @@ STATIC_DIR = BASE_DIR / "static"
 TEMPLATES_DIR = BASE_DIR / "templates"
 MEDIA_DIR = BASE_DIR / "media"
 
-# Max upload size: 2 GB
-MAX_UPLOAD_SIZE = 2 * 1024 * 1024 * 1024
+# Max upload size: 15 GB
+MAX_UPLOAD_SIZE = 15 * 1024 * 1024 * 1024
 
 # Room settings
 ROOM_CODE_LENGTH = 6

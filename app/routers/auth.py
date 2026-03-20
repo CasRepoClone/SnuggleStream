@@ -1,10 +1,13 @@
 """OAuth2 login/logout routes."""
 
+import secrets
+
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
 from app.auth import oauth
 from app.config import BASE_URL
+from app.security import validate_image_url
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -22,12 +25,18 @@ async def callback(request: Request):
     if not userinfo:
         return RedirectResponse("/auth/login")
 
+    # Rotate session: clear old data before setting new user
+    request.session.clear()
+
     request.session["user"] = {
-        "sub": userinfo["sub"],
-        "name": userinfo.get("name", "User"),
-        "email": userinfo.get("email", ""),
-        "picture": userinfo.get("picture", ""),
+        "sub": str(userinfo.get("sub", ""))[:128],
+        "name": str(userinfo.get("name", "User")).strip()[:100] or "User",
+        "email": str(userinfo.get("email", "")).strip()[:254],
+        "picture": validate_image_url(userinfo.get("picture", "")),
     }
+    # Unique session identifier (rotated on each login)
+    request.session["_sid"] = secrets.token_hex(16)
+
     return RedirectResponse("/")
 
 

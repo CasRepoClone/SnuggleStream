@@ -2,16 +2,21 @@
 
 import os
 import uuid
-from urllib.parse import urlparse
 
 import aiofiles
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
-from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from app.config import MEDIA_DIR, MAX_UPLOAD_SIZE
 from app.rooms import room_manager
 from app.auth import get_current_user
+from app.security import (
+    ALLOWED_UPLOAD_EXTENSIONS,
+    sanitize_text,
+    validate_room_code,
+    validate_video_url,
+    validate_magic_bytes,
+)
 
 router = APIRouter(prefix="/api")
 
@@ -46,19 +51,18 @@ class RoomResponse(BaseModel):
 @router.post("/rooms", response_model=RoomResponse)
 async def create_room(request: Request, body: CreateRoomRequest):
     _require_auth(request)
-    name = body.name.strip()
+    name = sanitize_text(body.name, 20)
     if not name:
         raise HTTPException(400, "Room name is required")
-    if len(name) > 60:
-        raise HTTPException(400, "Room name too long (max 60 chars)")
 
     video_url = body.video_url.strip()
-    if video_url and body.video_type == "url":
-        parsed = urlparse(video_url)
-        if parsed.scheme not in ("http", "https"):
-            raise HTTPException(400, "Only http/https URLs are allowed")
+    video_type = body.video_type if body.video_type in ("url", "file") else "url"
 
-    room = room_manager.create_room(name, video_url, body.video_type)
+    if video_url and video_type == "url":
+        if not validate_video_url(video_url):
+            raise HTTPException(400, "Invalid video URL. Only http/https URLs to video files are allowed.")
+
+    room = room_manager.create_room(name, video_url, video_type)
     return RoomResponse(
         code=room.code,
         name=room.name,
@@ -79,7 +83,10 @@ async def list_rooms(request: Request):
 @router.get("/rooms/{code}", response_model=RoomResponse)
 async def get_room(request: Request, code: str):
     _require_auth(request)
-    room = room_manager.get_room(code.upper())
+    validated_code = validate_room_code(code)
+    if not validated_code:
+        raise HTTPException(400, "Invalid room code format")
+    room = room_manager.get_room(validated_code)
     if not room:
         raise HTTPException(404, "Room not found")
     return RoomResponse(
@@ -95,33 +102,47 @@ async def get_room(request: Request, code: str):
 
 # --------------- Media Upload ---------------
 
-ALLOWED_EXTENSIONS = {".mp4", ".webm", ".mkv", ".avi", ".mov", ".m3u8"}
-
-
 @router.post("/upload")
 async def upload_video(request: Request, room_code: str = Form(...), file: UploadFile = File(...)):
     _require_auth(request)
-    room = room_manager.get_room(room_code.upper())
+
+    validated_code = validate_room_code(room_code)
+    if not validated_code:
+        raise HTTPException(400, "Invalid room code format")
+    room = room_manager.get_room(validated_code)
     if not room:
         raise HTTPException(404, "Room not found")
 
     ext = os.path.splitext(file.filename or "")[1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(400, f"File type {ext} not allowed. Use: {', '.join(ALLOWED_EXTENSIONS)}")
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            400,
+            f"File type '{ext}' not allowed. Accepted: {', '.join(sorted(ALLOWED_UPLOAD_EXTENSIONS))}",
+        )
+
+    # Read first 64 KB and validate magic bytes match the extension
+    first_chunk = await file.read(1024 * 64)
+    if not validate_magic_bytes(first_chunk, ext):
+        raise HTTPException(400, "File content does not match its extension. Upload a valid video file.")
 
     safe_name = f"{uuid.uuid4().hex}{ext}"
     dest = MEDIA_DIR / safe_name
     MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
-    total_size = 0
+    total_size = len(first_chunk)
+    oversized = False
     async with aiofiles.open(dest, "wb") as out:
+        await out.write(first_chunk)
         while chunk := await file.read(1024 * 1024):
             total_size += len(chunk)
             if total_size > MAX_UPLOAD_SIZE:
-                await out.close()
-                dest.unlink(missing_ok=True)
-                raise HTTPException(413, "File too large. Max 2 GB.")
+                oversized = True
+                break
             await out.write(chunk)
+
+    if oversized:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(413, f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024 ** 3)} GB.")
 
     video_url = f"/media/{safe_name}"
     room.state.video_url = video_url
@@ -130,12 +151,3 @@ async def upload_video(request: Request, room_code: str = Form(...), file: Uploa
     room.state.current_time = 0.0
 
     return {"video_url": video_url, "filename": safe_name}
-
-
-@router.get("/media/{filename}")
-async def serve_media(filename: str):
-    safe = os.path.basename(filename)
-    path = MEDIA_DIR / safe
-    if not path.exists() or not path.is_file():
-        raise HTTPException(404, "File not found")
-    return FileResponse(path)

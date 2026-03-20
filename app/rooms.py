@@ -10,6 +10,8 @@ from fastapi import WebSocket
 
 from app.config import ROOM_CODE_LENGTH, ROOM_EXPIRY_HOURS
 
+VOTE_TIMEOUT_SECONDS = 30
+
 
 @dataclass
 class RoomState:
@@ -29,6 +31,12 @@ class Room:
     created_at: float = field(default_factory=time.time)
     state: RoomState = field(default_factory=RoomState)
     connections: dict[str, WebSocket] = field(default_factory=dict)
+    host_id: str = ""
+    user_names: dict[str, str] = field(default_factory=dict)
+    # Voting state
+    voting_active: bool = False
+    votes: dict[str, str] = field(default_factory=dict)  # voter_id -> candidate_id
+    vote_start_time: float = 0.0
 
     @property
     def viewer_count(self) -> int:

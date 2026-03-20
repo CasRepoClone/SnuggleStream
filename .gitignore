@@ -7,6 +7,3 @@ dist/
 build/
 .venv/
 venv/
-.env.example
-*env.example
-.env.example

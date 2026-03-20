@@ -120,8 +120,9 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
     except Exception:
         pass
     finally:
-        room_manager.disconnect(room_code.upper(), user_id)
-        await room_manager.broadcast(room_code.upper(), {
-            "type": "viewer_update",
-            "viewers": room.viewer_count,
-        })
+        room_deleted = room_manager.disconnect(room_code.upper(), user_id)
+        if not room_deleted:
+            await room_manager.broadcast(room_code.upper(), {
+                "type": "viewer_update",
+                "viewers": room.viewer_count,
+            })

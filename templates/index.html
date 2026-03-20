@@ -14,6 +14,13 @@
         <header class="hero">
             <div class="hero-bg"></div>
             <div class="container">
+                <div class="user-bar">
+                    <div class="user-info">
+                        <img src="{{ user.picture }}" alt="" class="user-avatar" referrerpolicy="no-referrer">
+                        <span class="user-name">{{ user.name }}</span>
+                    </div>
+                    <a href="/auth/logout" class="btn-logout">Sign Out</a>
+                </div>
                 <div class="logo">
                     <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
@@ -118,7 +125,7 @@
         <!-- Footer -->
         <footer class="footer">
             <div class="container">
-                <p>SnuggleStream &mdash; No accounts needed, just vibes.</p>
+                <p>SnuggleStream &mdash; Signed in as {{ user.name }}.</p>
             </div>
         </footer>
     </div>

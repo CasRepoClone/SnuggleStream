@@ -31,6 +31,10 @@
                 </svg>
                 <span id="viewerCount">0</span>
             </div>
+            <div class="room-user">
+                <img src="{{ user.picture }}" alt="" class="user-avatar-sm" referrerpolicy="no-referrer">
+                <a href="/auth/logout" class="btn-logout-sm">Sign Out</a>
+            </div>
         </header>
 
         <!-- Main Area -->
@@ -146,6 +150,7 @@
 
     <script>
         window.ROOM_CODE = "{{ room_code }}";
+        window.USER_NAME = "{{ user.name }}";
     </script>
     <script src="/static/js/room.js"></script>
 </body>

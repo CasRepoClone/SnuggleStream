@@ -6,13 +6,21 @@ from urllib.parse import urlparse
 
 import aiofiles
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from app.config import MEDIA_DIR, MAX_UPLOAD_SIZE
 from app.rooms import room_manager
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/api")
+
+
+def _require_auth(request: Request) -> dict:
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(401, "Not authenticated")
+    return user
 
 
 # --------------- Schemas ---------------
@@ -36,7 +44,8 @@ class RoomResponse(BaseModel):
 # --------------- Room Endpoints ---------------
 
 @router.post("/rooms", response_model=RoomResponse)
-async def create_room(body: CreateRoomRequest):
+async def create_room(request: Request, body: CreateRoomRequest):
+    _require_auth(request)
     name = body.name.strip()
     if not name:
         raise HTTPException(400, "Room name is required")
@@ -62,12 +71,14 @@ async def create_room(body: CreateRoomRequest):
 
 
 @router.get("/rooms")
-async def list_rooms():
+async def list_rooms(request: Request):
+    _require_auth(request)
     return room_manager.list_rooms()
 
 
 @router.get("/rooms/{code}", response_model=RoomResponse)
-async def get_room(code: str):
+async def get_room(request: Request, code: str):
+    _require_auth(request)
     room = room_manager.get_room(code.upper())
     if not room:
         raise HTTPException(404, "Room not found")
@@ -88,7 +99,8 @@ ALLOWED_EXTENSIONS = {".mp4", ".webm", ".mkv", ".avi", ".mov", ".m3u8"}
 
 
 @router.post("/upload")
-async def upload_video(room_code: str = Form(...), file: UploadFile = File(...)):
+async def upload_video(request: Request, room_code: str = Form(...), file: UploadFile = File(...)):
+    _require_auth(request)
     room = room_manager.get_room(room_code.upper())
     if not room:
         raise HTTPException(404, "Room not found")

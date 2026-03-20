@@ -415,6 +415,7 @@
     }
 
     // ---- Init ----
+    if (window.USER_NAME) nicknameInput.value = window.USER_NAME;
     loadRoomInfo();
     connectWS();
 })();

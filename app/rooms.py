@@ -88,10 +88,15 @@ class RoomManager:
         room.connections[user_id] = websocket
         return room
 
-    def disconnect(self, code: str, user_id: str) -> None:
+    def disconnect(self, code: str, user_id: str) -> bool:
+        """Remove user from room. Returns True if room was deleted (0 viewers)."""
         room = self._rooms.get(code.upper())
         if room:
             room.connections.pop(user_id, None)
+            if room.viewer_count == 0:
+                self.delete_room(code)
+                return True
+        return False
 
     async def broadcast(self, code: str, message: dict, exclude_user: str = "") -> None:
         room = self.get_room(code)

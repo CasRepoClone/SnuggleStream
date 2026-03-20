@@ -627,3 +627,121 @@ input:focus, select:focus {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* ============================================
+   Login Page
+   ============================================ */
+.login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 30%, rgba(124,92,252,.12) 0%, transparent 70%);
+}
+.login-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3rem 2.5rem;
+    box-shadow: var(--shadow);
+    max-width: 420px;
+    width: 100%;
+}
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .7rem;
+    width: 100%;
+    padding: .85rem 1.5rem;
+    background: #fff;
+    color: #333;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: box-shadow .2s, transform .15s;
+}
+.google-btn:hover {
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+.login-note {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: .8rem;
+    margin-top: 1.5rem;
+    line-height: 1.6;
+}
+
+/* ============================================
+   User Bar (Home)
+   ============================================ */
+.user-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .8rem;
+    margin-bottom: 1rem;
+}
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+}
+.user-name {
+    font-size: .88rem;
+    font-weight: 500;
+    color: var(--text);
+}
+.btn-logout {
+    padding: .35rem .8rem;
+    font-size: .8rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: all .2s;
+}
+.btn-logout:hover {
+    border-color: var(--red);
+    color: var(--red);
+    text-decoration: none;
+}
+
+/* User in room header */
+.room-user {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-left: .5rem;
+}
+.user-avatar-sm {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+}
+.btn-logout-sm {
+    font-size: .75rem;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: .2rem .5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: all .2s;
+}
+.btn-logout-sm:hover {
+    border-color: var(--red);
+    color: var(--red);
+    text-decoration: none;
+}

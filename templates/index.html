@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnuggleStream</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="hero-bg"></div>
+            <div class="container">
+                <div class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <h1>SnuggleStream</h1>
+                </div>
+                <p class="tagline">Watch videos together, perfectly in sync.</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container main-content">
+            <div class="cards-grid">
+                <!-- Create Room Card -->
+                <div class="card card-create">
+                    <div class="card-header">
+                        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                        <h2>Create a Room</h2>
+                    </div>
+                    <p class="card-desc">Start a new watch party and invite friends with the room code.</p>
+                    <form id="createForm" class="form">
+                        <div class="form-group">
+                            <label for="roomName">Room Name</label>
+                            <input type="text" id="roomName" placeholder="Movie Night" maxlength="60" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Video Source</label>
+                            <div class="source-tabs">
+                                <button type="button" class="tab active" data-source="url">URL</button>
+                                <button type="button" class="tab" data-source="file">Upload</button>
+                                <button type="button" class="tab" data-source="later">Set Later</button>
+                            </div>
+                        </div>
+                        <div class="form-group source-panel" id="urlPanel">
+                            <label for="videoUrl">Video URL</label>
+                            <input type="url" id="videoUrl" placeholder="https://example.com/video.mp4">
+                            <span class="hint">Direct link to .mp4, .webm, or HLS stream (.m3u8)</span>
+                        </div>
+                        <div class="form-group source-panel" id="filePanel" style="display: none;">
+                            <label for="videoFile">Upload Video</label>
+                            <div class="file-drop" id="fileDrop">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p>Drop file here or <span class="link">browse</span></p>
+                                <span class="hint">MP4, WebM, MKV — up to 2 GB</span>
+                                <input type="file" id="videoFile" accept="video/*,.mkv" hidden>
+                            </div>
+                            <div id="fileInfo" class="file-info" style="display:none;"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="createBtn">
+                            <span>Create Room</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Join Room Card -->
+                <div class="card card-join">
+                    <div class="card-header">
+                        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                        <h2>Join a Room</h2>
+                    </div>
+                    <p class="card-desc">Enter a room code to join an existing watch party.</p>
+                    <form id="joinForm" class="form">
+                        <div class="form-group">
+                            <label for="roomCode">Room Code</label>
+                            <input type="text" id="roomCode" placeholder="ABC123" maxlength="6"
+                                   pattern="[A-Za-z0-9]{6}" style="text-transform: uppercase; letter-spacing: 0.3em; font-size: 1.4rem; text-align: center;" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">
+                            <span>Join Room</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </form>
+
+                    <!-- Active Rooms -->
+                    <div class="active-rooms" id="activeRooms" style="display: none;">
+                        <h3>Active Rooms</h3>
+                        <ul id="roomsList"></ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>SnuggleStream &mdash; No accounts needed, just vibes.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="overlay" id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p id="loadingText">Creating room...</p>
+    </div>
+
+    <script src="/static/js/home.js"></script>
+</body>
+</html>

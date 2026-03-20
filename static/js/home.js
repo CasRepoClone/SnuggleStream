@@ -1,0 +1,161 @@
+/* SnuggleStream — Home Page Logic */
+(function () {
+    "use strict";
+
+    const $  = (s, c) => (c || document).querySelector(s);
+    const $$ = (s, c) => [...(c || document).querySelectorAll(s)];
+
+    // ---- Source tabs ----
+    let selectedSource = "url";
+    const tabs = $$(".source-tabs .tab");
+    const urlPanel  = $("#urlPanel");
+    const filePanel = $("#filePanel");
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            tabs.forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            selectedSource = tab.dataset.source;
+            urlPanel.style.display  = selectedSource === "url"  ? "" : "none";
+            filePanel.style.display = selectedSource === "file" ? "" : "none";
+        });
+    });
+
+    // ---- File drop ----
+    const fileDrop  = $("#fileDrop");
+    const fileInput = $("#videoFile");
+    const fileInfo  = $("#fileInfo");
+    let selectedFile = null;
+
+    if (fileDrop) {
+        fileDrop.addEventListener("click", () => fileInput.click());
+        fileDrop.addEventListener("dragover",  e => { e.preventDefault(); fileDrop.classList.add("dragover"); });
+        fileDrop.addEventListener("dragleave", () => fileDrop.classList.remove("dragover"));
+        fileDrop.addEventListener("drop", e => {
+            e.preventDefault();
+            fileDrop.classList.remove("dragover");
+            if (e.dataTransfer.files.length) pickFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length) pickFile(fileInput.files[0]);
+        });
+    }
+
+    function pickFile(f) {
+        selectedFile = f;
+        fileInfo.textContent = `${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`;
+        fileInfo.style.display = "";
+    }
+
+    // ---- Create Room ----
+    const createForm = $("#createForm");
+    const createBtn  = $("#createBtn");
+    const overlay    = $("#loadingOverlay");
+    const loadingTxt = $("#loadingText");
+
+    createForm.addEventListener("submit", async e => {
+        e.preventDefault();
+        const name = $("#roomName").value.trim();
+        if (!name) return;
+
+        overlay.style.display = "flex";
+        loadingTxt.textContent = "Creating room...";
+
+        try {
+            const body = {
+                name,
+                video_url: selectedSource === "url" ? ($("#videoUrl").value.trim()) : "",
+                video_type: selectedSource === "file" ? "file" : "url",
+            };
+            if (selectedSource === "later") {
+                body.video_url = "";
+                body.video_type = "url";
+            }
+
+            const res = await fetch("/api/rooms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || "Failed to create room");
+            }
+            const room = await res.json();
+
+            // Upload file if chosen
+            if (selectedSource === "file" && selectedFile) {
+                loadingTxt.textContent = "Uploading video...";
+                const fd = new FormData();
+                fd.append("room_code", room.code);
+                fd.append("file", selectedFile);
+                const up = await fetch("/api/upload", { method: "POST", body: fd });
+                if (!up.ok) {
+                    const err = await up.json();
+                    throw new Error(err.detail || "Upload failed");
+                }
+            }
+
+            window.location.href = `/room/${room.code}`;
+        } catch (err) {
+            overlay.style.display = "none";
+            alert(err.message);
+        }
+    });
+
+    // ---- Join Room ----
+    const joinForm = $("#joinForm");
+    joinForm.addEventListener("submit", async e => {
+        e.preventDefault();
+        const code = $("#roomCode").value.trim().toUpperCase();
+        if (!code) return;
+        // Check room exists first
+        try {
+            const res = await fetch(`/api/rooms/${code}`);
+            if (!res.ok) throw new Error("Room not found. Check the code.");
+            window.location.href = `/room/${code}`;
+        } catch (err) {
+            alert(err.message);
+        }
+    });
+
+    // ---- Load active rooms ----
+    async function loadRooms() {
+        try {
+            const res = await fetch("/api/rooms");
+            const rooms = await res.json();
+            const container = $("#activeRooms");
+            const list = $("#roomsList");
+            if (rooms.length === 0) {
+                container.style.display = "none";
+                return;
+            }
+            container.style.display = "";
+            list.innerHTML = rooms.map(r => `
+                <li data-code="${r.code}">
+                    <span class="room-li-name">${escapeHtml(r.name)}</span>
+                    <span class="room-li-meta">
+                        <span class="room-li-viewers">${r.viewers} watching</span>
+                        <span>${r.code}</span>
+                    </span>
+                </li>
+            `).join("");
+            list.querySelectorAll("li").forEach(li => {
+                li.addEventListener("click", () => {
+                    window.location.href = `/room/${li.dataset.code}`;
+                });
+            });
+        } catch {
+            // ignore
+        }
+    }
+
+    function escapeHtml(s) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    loadRooms();
+    setInterval(loadRooms, 10000);
+})();

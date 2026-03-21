@@ -208,6 +208,7 @@ Push to `main` and the workflow will:
 4. `pip install -r requirements.txt`
 5. `systemctl restart snugglestream`
 
+#### This code falls under
 <p>GNU Affero General Public License v3</p>
 
 

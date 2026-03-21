@@ -17,8 +17,6 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     user = get_current_user(request)
-    if not user:
-        return templates.TemplateResponse("login.html", {"request": request})
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
 

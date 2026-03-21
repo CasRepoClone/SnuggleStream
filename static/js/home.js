@@ -5,6 +5,32 @@
     const $  = (s, c) => (c || document).querySelector(s);
     const $$ = (s, c) => [...(c || document).querySelectorAll(s)];
 
+    // Detect auth from both the global flag and the DOM
+    const isAuthed = window.__isAuthenticated === true || !!$(".user-info");
+
+    // ---- Auth gate ----
+    function showAuthOverlay() {
+        $("#appMain").classList.add("blurred");
+        $("#authOverlay").style.display = "";
+    }
+
+    function requireAuth() {
+        if (isAuthed) return true;
+        showAuthOverlay();
+        return false;
+    }
+
+    // Dismiss overlay
+    const authOverlay = $("#authOverlay");
+    if (authOverlay) {
+        authOverlay.addEventListener("click", e => {
+            if (e.target === authOverlay) {
+                authOverlay.style.display = "none";
+                $("#appMain").classList.remove("blurred");
+            }
+        });
+    }
+
     // ---- Source tabs ----
     let selectedSource = "url";
     const tabs = $$(".source-tabs .tab");
@@ -55,6 +81,7 @@
 
     createForm.addEventListener("submit", async e => {
         e.preventDefault();
+        if (!requireAuth()) return;
         const name = $("#roomName").value.trim();
         if (!name) return;
 
@@ -66,6 +93,7 @@
                 name,
                 video_url: selectedSource === "url" ? ($("#videoUrl").value.trim()) : "",
                 video_type: selectedSource === "file" ? "file" : "url",
+                is_private: $("#privateToggle").checked,
             };
             if (selectedSource === "later") {
                 body.video_url = "";
@@ -77,6 +105,11 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
+            if (res.status === 401) {
+                overlay.style.display = "none";
+                showAuthOverlay();
+                return;
+            }
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.detail || "Failed to create room");
@@ -107,11 +140,18 @@
     const joinForm = $("#joinForm");
     joinForm.addEventListener("submit", async e => {
         e.preventDefault();
+        if (!requireAuth()) return;
         const code = $("#roomCode").value.trim().toUpperCase();
         if (!code) return;
         // Check room exists first
         try {
-            const res = await fetch(`/api/rooms/${code}`);
+            const res = await fetch(`/api/rooms/${code}/check`);
+            if (res.status === 401) { showAuthOverlay(); return; }
+            if (res.status === 429) {
+                const err = await res.json();
+                alert(err.detail || "Too many requests. Wait a moment and try again.");
+                return;
+            }
             if (!res.ok) throw new Error("Room not found. Check the code.");
             window.location.href = `/room/${code}`;
         } catch (err) {
@@ -121,8 +161,10 @@
 
     // ---- Load active rooms ----
     async function loadRooms() {
+        if (!isAuthed) return;
         try {
             const res = await fetch("/api/rooms");
+            if (!res.ok) return;
             const rooms = await res.json();
             const container = $("#activeRooms");
             const list = $("#roomsList");
@@ -142,6 +184,7 @@
             `).join("");
             list.querySelectorAll("li").forEach(li => {
                 li.addEventListener("click", () => {
+                    if (!requireAuth()) return;
                     window.location.href = `/room/${li.dataset.code}`;
                 });
             });

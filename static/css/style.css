@@ -2,22 +2,22 @@
    SnuggleStream — Global Styles
    ============================================ */
 :root {
-    --bg:        #0f0f13;
-    --bg-card:   #1a1a24;
-    --bg-input:  #12121a;
-    --surface:   #22222e;
-    --border:    #2a2a3a;
-    --text:      #e8e6f0;
-    --text-dim:  #8888a0;
-    --primary:   #7c5cfc;
-    --primary-h: #9478ff;
-    --accent:    #ff6b9d;
-    --green:     #4cde80;
-    --red:       #ff4d6a;
-    --radius:    12px;
-    --radius-sm: 8px;
+    --bg:        #1a1118;
+    --bg-card:   #241a22;
+    --bg-input:  #1e1319;
+    --surface:   #2e2129;
+    --border:    #3d2a38;
+    --text:      #f5eaf0;
+    --text-dim:  #b89aad;
+    --primary:   #f2a0bf;
+    --primary-h: #f7b8d0;
+    --accent:    #e87faa;
+    --green:     #8edfa8;
+    --red:       #f06f7e;
+    --radius:    14px;
+    --radius-sm: 10px;
     --font:      'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --shadow:    0 4px 24px rgba(0,0,0,.35);
+    --shadow:    0 4px 28px rgba(60,20,40,.4);
 }
 
 *, *::before, *::after {
@@ -33,7 +33,7 @@ html {
 
 body {
     font-family: var(--font);
-    background: var(--bg);
+    background: linear-gradient(160deg, #1a1118 0%, #1f1520 40%, #221425 100%);
     color: var(--text);
     min-height: 100vh;
     line-height: 1.5;
@@ -60,7 +60,7 @@ a:hover { text-decoration: underline; }
 }
 .hero-bg {
     position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 50% 0%, rgba(124,92,252,.18) 0%, transparent 70%);
+    background: radial-gradient(ellipse at 50% 0%, rgba(242,160,191,.2) 0%, rgba(232,127,170,.08) 40%, transparent 70%);
     pointer-events: none;
 }
 .logo {
@@ -73,10 +73,18 @@ a:hover { text-decoration: underline; }
     width: 36px; height: 36px;
     color: var(--primary);
 }
+.logo-kitty {
+    width: 48px; height: 48px;
+    image-rendering: pixelated;
+}
+.logo-kitty-sm {
+    width: 26px; height: 26px;
+    image-rendering: pixelated;
+}
 .logo h1 {
     font-size: 2.2rem;
     font-weight: 700;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: linear-gradient(135deg, #f7b8d0, #e87faa, #d4689e);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -110,7 +118,13 @@ a:hover { text-decoration: underline; }
     box-shadow: var(--shadow);
     transition: border-color .2s;
 }
-.card:hover { border-color: var(--primary); }
+.card {
+    transition: border-color .2s, box-shadow .2s;
+}
+.card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 24px rgba(242,160,191,.1);
+}
 .card-header {
     display: flex;
     align-items: center;
@@ -136,6 +150,14 @@ a:hover { text-decoration: underline; }
     text-transform: uppercase;
     letter-spacing: .04em;
 }
+.form-group label.toggle-label {
+    display: inline-flex;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: inherit;
+    color: inherit;
+    margin-bottom: 0;
+}
 input[type="text"],
 input[type="url"],
 input[type="number"],
@@ -153,13 +175,60 @@ select {
 }
 input:focus, select:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(124,92,252,.15);
+    box-shadow: 0 0 0 3px rgba(242,160,191,.2);
 }
 .hint {
     display: block;
     font-size: .78rem;
     color: var(--text-dim);
     margin-top: .3rem;
+}
+
+/* Toggle switch */
+.toggle-group { margin-bottom: 1.2rem; margin-top: .2rem; }
+.toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: .7rem;
+    cursor: pointer;
+    user-select: none;
+}
+.toggle-label input { display: none; }
+.toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: rgba(184, 154, 173, .35);
+    border: 1px solid rgba(184, 154, 173, .45);
+    border-radius: 999px;
+    transition: background .25s, border-color .25s;
+    flex-shrink: 0;
+}
+.toggle-switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    transition: transform .25s, background .25s;
+}
+.toggle-label input:checked + .toggle-switch {
+    background: var(--primary);
+}
+.toggle-label input:checked + .toggle-switch::after {
+    transform: translateX(18px);
+    background: var(--bg);
+}
+.toggle-text {
+    font-size: .92rem;
+    font-weight: 500;
+    color: var(--text);
+}
+.toggle-group .hint {
+    margin-left: calc(40px + .6rem);
 }
 
 /* Source tabs */
@@ -197,7 +266,7 @@ input:focus, select:focus {
 }
 .file-drop:hover, .file-drop.dragover {
     border-color: var(--primary);
-    background: rgba(124,92,252,.05);
+    background: rgba(242,160,191,.06);
 }
 .file-drop svg { width: 36px; height: 36px; color: var(--text-dim); margin-bottom: .5rem; }
 .file-drop .link { color: var(--primary-h); cursor: pointer; }
@@ -226,7 +295,7 @@ input:focus, select:focus {
 .btn-primary {
     width: 100%;
     justify-content: center;
-    background: linear-gradient(135deg, var(--primary), #6446e0);
+    background: linear-gradient(135deg, #f2a0bf, #e87faa, #d4689e);
     color: #fff;
 }
 .btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
@@ -237,7 +306,7 @@ input:focus, select:focus {
     color: var(--text);
     border: 1px solid var(--border);
 }
-.btn-secondary:hover { border-color: var(--primary); background: rgba(124,92,252,.1); }
+.btn-secondary:hover { border-color: var(--primary); background: rgba(242,160,191,.1); }
 .btn-sm {
     padding: .5rem 1rem;
     font-size: .85rem;
@@ -269,7 +338,7 @@ input:focus, select:focus {
     cursor: pointer;
     transition: background .2s;
 }
-.active-rooms li:hover { background: rgba(124,92,252,.12); }
+.active-rooms li:hover { background: rgba(242,160,191,.1); }
 .room-li-name { font-weight: 500; }
 .room-li-meta {
     display: flex; align-items: center; gap: .5rem;
@@ -293,7 +362,7 @@ input:focus, select:focus {
    ============================================ */
 .overlay {
     position: fixed; inset: 0;
-    background: rgba(15,15,19,.85);
+    background: rgba(26,17,24,.88);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     z-index: 1000;
@@ -653,7 +722,7 @@ input:focus, select:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at 50% 30%, rgba(124,92,252,.12) 0%, transparent 70%);
+    background: radial-gradient(ellipse at 50% 30%, rgba(242,160,191,.15) 0%, rgba(232,127,170,.06) 50%, transparent 70%);
 }
 .login-card {
     background: var(--bg-card);
@@ -696,6 +765,36 @@ input:focus, select:focus {
 }
 
 /* ============================================
+   Auth Overlay (sign-in gate)
+   ============================================ */
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(26, 17, 24, .7);
+    animation: fadeIn .3s ease-out;
+}
+.auth-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3rem 2.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    max-width: 420px;
+    width: 90%;
+}
+.app.blurred {
+    filter: blur(6px);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* ============================================
    User Bar (Home)
    ============================================ */
 .user-bar {
@@ -733,6 +832,21 @@ input:focus, select:focus {
 .btn-logout:hover {
     border-color: var(--red);
     color: var(--red);
+    text-decoration: none;
+}
+.btn-signin {
+    padding: .45rem 1.2rem;
+    font-size: .85rem;
+    font-weight: 600;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    color: var(--primary);
+    text-decoration: none;
+    transition: all .2s;
+}
+.btn-signin:hover {
+    background: var(--primary);
+    color: #fff;
     text-decoration: none;
 }
 
@@ -781,7 +895,7 @@ input:focus, select:focus {
 }
 .host-badge svg { width: 14px; height: 14px; }
 .host-badge.is-you {
-    background: linear-gradient(135deg, rgba(255,107,157,.15), rgba(124,92,252,.15));
+    background: linear-gradient(135deg, rgba(242,160,191,.2), rgba(232,127,170,.15));
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -803,7 +917,7 @@ input:focus, select:focus {
 .vote-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 15, 19, .88);
+    background: rgba(26, 17, 24, .9);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -824,7 +938,7 @@ input:focus, select:focus {
     font-size: 1.2rem;
     font-weight: 700;
     margin-bottom: .5rem;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: linear-gradient(135deg, #f7b8d0, #e87faa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -854,14 +968,14 @@ input:focus, select:focus {
 }
 .vote-btn:hover:not(:disabled) {
     border-color: var(--primary);
-    background: rgba(124, 92, 252, .12);
+    background: rgba(242, 160, 191, .12);
 }
 .vote-btn:disabled {
     opacity: .5;
     cursor: not-allowed;
 }
 .vote-btn.voted {
-    background: linear-gradient(135deg, var(--primary), #6446e0);
+    background: linear-gradient(135deg, #f2a0bf, #d4689e);
     border-color: var(--primary);
     color: #fff;
     opacity: 1;

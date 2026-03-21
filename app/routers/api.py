@@ -1,6 +1,7 @@
 """API routes for room and media management."""
 
 import os
+import time
 import uuid
 
 import aiofiles
@@ -28,12 +29,30 @@ def _require_auth(request: Request) -> dict:
     return user
 
 
+# --------------- Rate limiter for room-code lookups ---------------
+
+_JOIN_RATE: dict[str, float] = {}  # IP -> last request timestamp
+_JOIN_INTERVAL = 2.0  # seconds between allowed requests
+
+
+def _check_join_rate(request: Request):
+    """Enforce 1 request per 2 seconds per IP on room-code lookups."""
+    ip = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    last = _JOIN_RATE.get(ip, 0.0)
+    if now - last < _JOIN_INTERVAL:
+        wait = round(_JOIN_INTERVAL - (now - last), 1)
+        raise HTTPException(429, f"Too many requests. Try again in {wait}s.")
+    _JOIN_RATE[ip] = now
+
+
 # --------------- Schemas ---------------
 
 class CreateRoomRequest(BaseModel):
     name: str
     video_url: str = ""
     video_type: str = "url"  # "url" | "file"
+    is_private: bool = False
 
 
 class RoomResponse(BaseModel):
@@ -62,7 +81,7 @@ async def create_room(request: Request, body: CreateRoomRequest):
         if not validate_video_url(video_url):
             raise HTTPException(400, "Invalid video URL. Only http/https URLs to video files are allowed.")
 
-    room = room_manager.create_room(name, video_url, video_type)
+    room = room_manager.create_room(name, video_url, video_type, is_private=body.is_private)
     return RoomResponse(
         code=room.code,
         name=room.name,
@@ -98,6 +117,20 @@ async def get_room(request: Request, code: str):
         is_playing=room.state.is_playing,
         current_time=room.state.current_time,
     )
+
+
+@router.get("/rooms/{code}/check")
+async def check_room(request: Request, code: str):
+    """Rate-limited room existence check used by the join form."""
+    _require_auth(request)
+    _check_join_rate(request)
+    validated_code = validate_room_code(code)
+    if not validated_code:
+        raise HTTPException(400, "Invalid room code format")
+    room = room_manager.get_room(validated_code)
+    if not room:
+        raise HTTPException(404, "Room not found")
+    return {"code": room.code, "name": room.name}
 
 
 # --------------- Media Upload ---------------

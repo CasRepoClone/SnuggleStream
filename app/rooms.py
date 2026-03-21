@@ -28,6 +28,7 @@ class RoomState:
 class Room:
     code: str
     name: str
+    is_private: bool = False
     created_at: float = field(default_factory=time.time)
     state: RoomState = field(default_factory=RoomState)
     connections: dict[str, WebSocket] = field(default_factory=dict)
@@ -59,10 +60,10 @@ class RoomManager:
             if code not in self._rooms:
                 return code
 
-    def create_room(self, name: str, video_url: str = "", video_type: str = "url") -> Room:
+    def create_room(self, name: str, video_url: str = "", video_type: str = "url", is_private: bool = False) -> Room:
         code = self._generate_code()
         state = RoomState(video_url=video_url, video_type=video_type)
-        room = Room(code=code, name=name, state=state)
+        room = Room(code=code, name=name, is_private=is_private, state=state)
         self._rooms[code] = room
         return room
 
@@ -86,6 +87,7 @@ class RoomManager:
                 "has_video": bool(r.state.video_url),
             }
             for r in self._rooms.values()
+            if not r.is_private
         ]
 
     async def connect(self, code: str, user_id: str, websocket: WebSocket) -> Optional[Room]:

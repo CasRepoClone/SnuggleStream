@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from app.config import STATIC_DIR, MEDIA_DIR, SESSION_SECRET
+from app.config import STATIC_DIR, MEDIA_DIR, SESSION_SECRET, BASE_URL
 from app.routers import api, ws, pages, auth
 
 # --------------- Security Headers Middleware ---------------
@@ -57,7 +57,12 @@ app = FastAPI(title="SnuggleStream", version="1.0.0")
 
 # Middleware (outermost first)
 app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, max_age=7 * 24 * 3600)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    max_age=7 * 24 * 3600,
+    https_only=BASE_URL.startswith("https://"),
+)
 
 # Static files (media served via authenticated endpoint in pages router)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)

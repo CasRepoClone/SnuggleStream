@@ -2,6 +2,7 @@
 
 import secrets
 
+from authlib.integrations.base_client.errors import MismatchingStateError
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
@@ -20,7 +21,10 @@ async def login(request: Request):
 
 @router.get("/callback")
 async def callback(request: Request):
-    token = await oauth.google.authorize_access_token(request)
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except MismatchingStateError:
+        return RedirectResponse("/auth/login")
     userinfo = token.get("userinfo")
     if not userinfo:
         return RedirectResponse("/auth/login")

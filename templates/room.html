@@ -13,7 +13,7 @@
     <meta property="og:title" content="Join my SnuggleStream Watch Party!">
     <meta property="og:description" content="Come watch videos together on SnuggleStream — synchronized playback, real-time chat, and more.">
     <meta property="og:image" content="{{ base_url }}/static/assets/kitty.png">
-    <link rel="stylesheet" href="/static/css/style.css?v=6">
+    <link rel="stylesheet" href="/static/css/style.css?v=7">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
@@ -119,6 +119,30 @@
                                 <option value="1.5">1.5x</option>
                                 <option value="2">2x</option>
                             </select>
+                            <div class="stream-settings" id="streamSettings" style="display:none;">
+                                <button class="ctrl-btn" id="streamSettingsBtn" title="Stream quality settings">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                    </svg>
+                                </button>
+                                <div class="stream-settings-menu" id="streamSettingsMenu" style="display:none;">
+                                    <div class="settings-section">
+                                        <div class="settings-label">Video Quality</div>
+                                        <button class="settings-item" data-vbitrate="500000">Low (500 kbps)</button>
+                                        <button class="settings-item" data-vbitrate="1500000">Medium (1.5 Mbps)</button>
+                                        <button class="settings-item active" data-vbitrate="3000000">High (3 Mbps)</button>
+                                        <button class="settings-item" data-vbitrate="6000000">Max (6 Mbps)</button>
+                                    </div>
+                                    <div class="settings-section">
+                                        <div class="settings-label">Audio Bitrate</div>
+                                        <button class="settings-item" data-abitrate="64000">64 kbps</button>
+                                        <button class="settings-item" data-abitrate="128000">128 kbps</button>
+                                        <button class="settings-item active" data-abitrate="256000">256 kbps</button>
+                                        <button class="settings-item" data-abitrate="510000">510 kbps</button>
+                                    </div>
+                                </div>
+                            </div>
                             <button class="ctrl-btn" id="fullscreenBtn" title="Fullscreen">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
                             </button>
@@ -212,6 +236,6 @@
     </div>
 
     <div id="appData" data-room-code="{{ room_code }}" data-user-name="{{ user.name }}" hidden></div>
-    <script src="/static/js/room.js?v=2"></script>
+    <script src="/static/js/room.js?v=3"></script>
 </body>
 </html>

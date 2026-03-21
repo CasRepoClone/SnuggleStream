@@ -43,6 +43,9 @@
     const uploadPercent   = $("#uploadPercent");
     const videoLoading    = $("#videoLoading");
     const toastContainer  = $("#toastContainer");
+    const streamSettingsEl  = $("#streamSettings");
+    const streamSettingsBtn = $("#streamSettingsBtn");
+    const streamSettingsMenu = $("#streamSettingsMenu");
     const hostBadge       = $("#hostBadge");
     const hostNameEl      = $("#hostName");
     const voteOverlay     = $("#voteOverlay");
@@ -1114,6 +1117,70 @@
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     };
 
+    // ---- Stream quality settings (cogwheel) ----
+    let targetVideoBitrate = 3000000;   // default: High (3 Mbps)
+    let targetAudioBitrate = 256000;    // default: 256 kbps
+
+    if (streamSettingsBtn) {
+        streamSettingsBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            streamSettingsMenu.style.display = streamSettingsMenu.style.display === "none" ? "" : "none";
+        });
+    }
+    // Close menu on outside click
+    document.addEventListener("click", () => {
+        if (streamSettingsMenu) streamSettingsMenu.style.display = "none";
+    });
+    if (streamSettingsMenu) {
+        streamSettingsMenu.addEventListener("click", (e) => e.stopPropagation());
+    }
+
+    // Handle video bitrate items
+    document.querySelectorAll("[data-vbitrate]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            targetVideoBitrate = parseInt(btn.dataset.vbitrate, 10);
+            document.querySelectorAll("[data-vbitrate]").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            applyBitrateToSenders();
+        });
+    });
+    // Handle audio bitrate items
+    document.querySelectorAll("[data-abitrate]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            targetAudioBitrate = parseInt(btn.dataset.abitrate, 10);
+            document.querySelectorAll("[data-abitrate]").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            applyBitrateToSenders();
+        });
+    });
+
+    // Apply bitrate limits to all active peer connection senders (host side)
+    async function applyBitrateToSenders() {
+        for (const pc of Object.values(peerConnections)) {
+            for (const sender of pc.getSenders()) {
+                if (!sender.track) continue;
+                const params = sender.getParameters();
+                if (!params.encodings || params.encodings.length === 0) {
+                    params.encodings = [{}];
+                }
+                if (sender.track.kind === "video") {
+                    params.encodings[0].maxBitrate = targetVideoBitrate;
+                } else if (sender.track.kind === "audio") {
+                    params.encodings[0].maxBitrate = targetAudioBitrate;
+                }
+                try { await sender.setParameters(params); } catch (_) { /* ignore */ }
+            }
+        }
+    }
+
+    function showStreamSettings() {
+        if (streamSettingsEl) streamSettingsEl.style.display = "";
+    }
+    function hideStreamSettings() {
+        if (streamSettingsEl) streamSettingsEl.style.display = "none";
+        if (streamSettingsMenu) streamSettingsMenu.style.display = "none";
+    }
+
     // --- Host: start screen capture ---
     if (startScreenBtn) {
         startScreenBtn.addEventListener("click", async () => {
@@ -1124,8 +1191,14 @@
             }
             try {
                 screenStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { cursor: "always" },
-                    audio: true
+                    video: { cursor: "always", frameRate: { ideal: 30 } },
+                    audio: {
+                        sampleRate: 48000,
+                        channelCount: 2,
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    }
                 });
             } catch (err) {
                 if (err.name === "NotAllowedError") {
@@ -1144,6 +1217,7 @@
             showNativePlayer();
             startScreenBtn.style.display = "none";
             stopScreenBtn.style.display = "";
+            showStreamSettings();
 
             // Notify all viewers via WebSocket
             send({ type: "screen_share_start" });
@@ -1181,6 +1255,7 @@
 
         if (startScreenBtn) startScreenBtn.style.display = "";
         if (stopScreenBtn) stopScreenBtn.style.display = "none";
+        hideStreamSettings();
 
         send({ type: "screen_share_stop" });
         addChatEvent("stopped screen sharing");
@@ -1221,6 +1296,15 @@
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         send({ type: "webrtc_offer", target: viewerId, offer: pc.localDescription });
+
+        // Apply current bitrate limits to this peer's senders
+        for (const sender of pc.getSenders()) {
+            if (!sender.track) continue;
+            const params = sender.getParameters();
+            if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+            params.encodings[0].maxBitrate = sender.track.kind === "video" ? targetVideoBitrate : targetAudioBitrate;
+            try { await sender.setParameters(params); } catch (_) {}
+        }
     }
 
     // Viewer: handle incoming WebRTC offer from host

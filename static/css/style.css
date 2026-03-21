@@ -752,6 +752,60 @@ input:focus, select:focus {
     font-weight: 600;
 }
 
+/* Stream settings (cogwheel) */
+.stream-settings {
+    position: relative;
+    display: inline-block;
+}
+.stream-settings-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 6px;
+    background: rgba(36, 26, 34, .92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    min-width: 170px;
+    z-index: 55;
+    box-shadow: var(--shadow);
+    padding: .35rem 0;
+}
+.settings-section {
+    padding: .25rem 0;
+}
+.settings-section + .settings-section {
+    border-top: 1px solid var(--border);
+}
+.settings-label {
+    padding: .3rem .8rem;
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.settings-item {
+    display: block;
+    width: 100%;
+    padding: .4rem .8rem;
+    font-size: .82rem;
+    color: var(--text);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font);
+}
+.settings-item:hover {
+    background: var(--surface);
+}
+.settings-item.active {
+    color: var(--primary);
+    font-weight: 600;
+}
+
 /* Source panel in room */
 .source-panel-room {
     padding: .8rem 1rem;

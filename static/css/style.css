@@ -477,7 +477,7 @@ input:focus, select:focus {
 .footer-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 1.5rem;
     flex-wrap: wrap;
 }
@@ -487,11 +487,12 @@ input:focus, select:focus {
     font-size: .8rem;
     opacity: .7;
     transition: opacity .2s;
-    position: absolute;
-    left: 1.5rem;
 }
 .footer-link:hover { opacity: 1; }
-.footer-row { position: relative; }
+.footer-row nav {
+    display: flex;
+    gap: .8rem;
+}
 
 /* TOS page */
 .hero-sm { padding: 1.2rem 0; }

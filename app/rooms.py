@@ -18,6 +18,7 @@ class RoomState:
     """Current playback state for a room."""
     video_url: str = ""
     video_type: str = "url"  # "url" | "file"
+    hls_url: str = ""  # Adaptive HLS stream (set after transcoding)
     is_playing: bool = False
     current_time: float = 0.0
     last_update: float = field(default_factory=time.time)

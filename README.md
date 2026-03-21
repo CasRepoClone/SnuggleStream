@@ -203,9 +203,12 @@ Open `.github/workflows/deploy.yml` and set your server's hostname and SSH user 
 
 Push to `main` and the workflow will:
 
-1. SSH into your server
-
-<p>GNU Affero General Public License v3</p>
+1.#SSH into your server
 3. `git fetch` + `git reset --hard` to the latest commit
 4. `pip install -r requirements.txt`
 5. `systemctl restart snugglestream`
+
+<p>GNU Affero General Public License v3</p>
+
+
+

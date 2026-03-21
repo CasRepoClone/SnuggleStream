@@ -41,17 +41,25 @@ async def room_page(request: Request, code: str):
 
 @router.get("/media/{filename:path}")
 async def serve_media(request: Request, filename: str):
-    """Serve uploaded media files with authentication and path-traversal protection."""
+    """Serve uploaded media files (including HLS segments) with auth + traversal protection."""
     user = get_current_user(request)
     if not user:
         raise HTTPException(401, "Not authenticated")
-    safe = os.path.basename(filename)
-    if not safe or safe.startswith("."):
-        raise HTTPException(400, "Invalid filename")
-    path = (MEDIA_DIR / safe).resolve()
-    # Ensure resolved path is inside MEDIA_DIR (prevent traversal)
+
+    # Block path traversal components
+    if ".." in filename or filename.startswith(("/", "\\")):
+        raise HTTPException(400, "Invalid path")
+
+    # Resolve and verify it stays inside MEDIA_DIR
+    path = (MEDIA_DIR / filename).resolve()
     if not str(path).startswith(str(MEDIA_DIR.resolve())):
         raise HTTPException(400, "Invalid path")
     if not path.is_file():
         raise HTTPException(404, "File not found")
+
+    # Correct MIME types for HLS files
+    if filename.endswith(".m3u8"):
+        return FileResponse(path, media_type="application/vnd.apple.mpegurl")
+    if filename.endswith(".ts"):
+        return FileResponse(path, media_type="video/MP2T")
     return FileResponse(path)

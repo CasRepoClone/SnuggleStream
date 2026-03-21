@@ -19,6 +19,7 @@ from app.security import (
     validate_video_url,
     validate_magic_bytes,
 )
+from app.transcode import start_transcode, get_job
 
 router = APIRouter(prefix="/api")
 
@@ -217,7 +218,33 @@ async def upload_video(request: Request, room_code: str = Form(...), file: Uploa
     video_url = f"/media/{safe_name}"
     room.state.video_url = video_url
     room.state.video_type = "file"
+    room.state.hls_url = ""  # Reset until transcoding finishes
     room.state.is_playing = False
     room.state.current_time = 0.0
 
+    # Kick off background HLS transcoding
+    start_transcode(safe_name, validated_code, notify=_on_hls_ready)
+
     return {"video_url": video_url, "filename": safe_name}
+
+
+async def _on_hls_ready(hls_url: str, room_code: str):
+    """Called when HLS transcoding completes — update room and notify clients."""
+    room = room_manager.get_room(room_code)
+    if not room:
+        return
+    room.state.hls_url = hls_url
+    await room_manager.broadcast(room_code, {
+        "type": "hls_ready",
+        "hls_url": hls_url,
+    })
+
+
+@router.get("/transcode/{filename}")
+async def transcode_status(request: Request, filename: str):
+    """Check transcoding progress for an uploaded file."""
+    _require_auth(request)
+    job = get_job(filename)
+    if not job:
+        return {"status": "none"}
+    return job

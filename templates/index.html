@@ -4,7 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-adsense-account" content="ca-pub-9118926777389688">
-    <title>SnuggleStream</title>
+    <title>SnuggleStream — Watch Videos Together in Sync</title>
+    <meta name="description" content="SnuggleStream lets you watch videos together with friends, perfectly synchronized. Create a room, share the code, and enjoy movies, shows, and videos in real time.">
+    <meta name="keywords" content="watch together, sync video, watch party, synchronized video, movie night, watch with friends, video streaming, SnuggleStream">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ base_url }}/">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SnuggleStream">
+    <meta property="og:title" content="SnuggleStream — Watch Videos Together in Sync">
+    <meta property="og:description" content="Create a room, share the code, and watch videos with friends — perfectly synchronized. Free, no downloads needed.">
+    <meta property="og:url" content="{{ base_url }}/">
+    <meta property="og:image" content="{{ base_url }}/static/assets/kitty.png">
+    <meta property="og:image:alt" content="SnuggleStream logo">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="SnuggleStream — Watch Videos Together in Sync">
+    <meta name="twitter:description" content="Create a room, share the code, and watch videos with friends — perfectly synchronized.">
+    <meta name="twitter:image" content="{{ base_url }}/static/assets/kitty.png">
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "SnuggleStream",
+        "url": "{{ base_url }}/",
+        "description": "Watch videos together with friends, perfectly synchronized. Create a room, share the code, and enjoy content in real time.",
+        "applicationCategory": "Entertainment",
+        "operatingSystem": "Any",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Synchronized video playback",
+            "Real-time chat",
+            "Room-based watch parties",
+            "Video URL and file upload support",
+            "HLS adaptive streaming",
+            "GIF sharing in chat"
+        ],
+        "image": "{{ base_url }}/static/assets/kitty.png"
+    }
+    </script>
     <link rel="stylesheet" href="/static/css/style.css?v=5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,27 +58,34 @@
         <header class="hero">
             <div class="hero-bg"></div>
             <div class="container">
-                <div class="user-bar">
+                <nav class="user-bar" aria-label="User navigation">
                     {% if user %}
                     <div class="user-info">
-                        <img src="{{ user.picture }}" alt="" class="user-avatar" referrerpolicy="no-referrer">
+                        <img src="{{ user.picture }}" alt="{{ user.name }} profile picture" class="user-avatar" referrerpolicy="no-referrer">
                         <span class="user-name">{{ user.name }}</span>
                     </div>
                     <a href="/auth/logout" class="btn-logout">Sign Out</a>
                     {% else %}
                     <a href="/auth/login" class="btn-signin">Sign In</a>
                     {% endif %}
-                </div>
+                </nav>
                 <div class="logo">
-                    <img src="/static/assets/kitty.png" alt="SnuggleStream" class="logo-kitty">
+                    <img src="/static/assets/kitty.png" alt="SnuggleStream logo — a cute cat mascot" class="logo-kitty">
                     <h1>SnuggleStream</h1>
                 </div>
                 <p class="tagline">Watch videos together, perfectly in sync.</p>
             </div>
         </header>
 
+        <noscript>
+            <div style="text-align:center; padding:2rem; color:#f5eaf0;">
+                <h2>JavaScript Required</h2>
+                <p>SnuggleStream needs JavaScript to create and join watch party rooms. Please enable JavaScript in your browser.</p>
+            </div>
+        </noscript>
+
         <!-- Main Content -->
-        <main class="container main-content">
+        <main class="container main-content" aria-label="Create or join a watch party">
             <div class="cards-grid">
                 <!-- Create Room Card -->
                 <div class="card card-create">
@@ -134,9 +184,11 @@
         </main>
 
         <!-- Footer -->
-        <footer class="footer">
+        <footer class="footer" role="contentinfo">
             <div class="container footer-row">
-                <a href="/terms" class="footer-link">Privacy Policy</a>
+                <nav aria-label="Footer navigation">
+                    <a href="/terms" class="footer-link">Privacy Policy</a>
+                </nav>
                 {% if user %}
                 <p>SnuggleStream &mdash; Signed in as {{ user.name }}.</p>
                 {% else %}
@@ -148,7 +200,7 @@
 
     <!-- Sign-in Required Overlay -->
     <div class="auth-overlay" id="authOverlay" style="display: none;">
-        <div class="auth-card">
+        <div class="auth-card" role="dialog" aria-label="Sign in required">
             <div class="logo" style="justify-content: center; margin-bottom: .5rem;">
                 <img src="/static/assets/kitty.png" alt="SnuggleStream" class="logo-kitty">
                 <h1>SnuggleStream</h1>

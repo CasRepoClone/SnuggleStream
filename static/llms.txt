@@ -1,0 +1,41 @@
+# SnuggleStream
+
+> Watch videos together with friends, perfectly synchronized.
+
+SnuggleStream is a free, browser-based platform that lets friends watch video content together in real time. It synchronizes playback so everyone in a room sees the same moment at the same time.
+
+## What It Does
+
+- **Synchronized Video Playback**: Everyone in a room sees the same video at the same time. Play, pause, and seek are synced across all viewers.
+- **Room-Based Watch Parties**: Create a room, get a 6-character code, share it with friends. No downloads required.
+- **Multiple Video Sources**: Supports direct video URLs (MP4, WebM, MKV, M3U8), YouTube links, and file uploads up to 15 GB.
+- **HLS Adaptive Streaming**: Uploaded videos are automatically transcoded into multi-quality HLS streams (360p, 480p, 720p) for smooth playback.
+- **Real-Time Chat**: Built-in chat with GIF support (powered by GIPHY) so you can react and discuss while watching.
+- **Host Controls**: The room creator controls playback. If the host leaves, viewers vote for a new host.
+- **Private Rooms**: Toggle rooms to private so they're only joinable via the room code.
+
+## How It Works
+
+1. Sign in with Google (we only store your name and profile picture)
+2. Create a room and set a video source (URL, upload, or set later)
+3. Share the 6-character room code with friends
+4. Watch together — playback is synchronized across all connected viewers
+
+## Technical Details
+
+- Built with FastAPI (Python) and vanilla JavaScript
+- WebSocket-based real-time sync and chat
+- HLS transcoding via FFmpeg for uploaded files
+- Google OAuth 2.0 for authentication
+- No persistent storage — rooms are in-memory and disappear when empty
+
+## Pages
+
+- `/` — Home page: create or join watch party rooms
+- `/terms` — Privacy policy and terms of service
+- `/room/{code}` — Watch party room (requires sign-in)
+
+## Links
+
+- Home: /
+- Privacy Policy: /terms

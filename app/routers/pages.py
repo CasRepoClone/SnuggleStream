@@ -1,12 +1,13 @@
 """Page-serving routes."""
 
 import os
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from app.config import MEDIA_DIR, TEMPLATES_DIR
+from app.config import BASE_URL, MEDIA_DIR, STATIC_DIR, TEMPLATES_DIR
 from app.auth import get_current_user
 from app.security import validate_room_code
 
@@ -14,15 +15,56 @@ router = APIRouter()
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
+# --------------- SEO & Crawler Routes ---------------
+
+@router.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt():
+    path = STATIC_DIR / "robots.txt"
+    if not path.is_file():
+        raise HTTPException(404)
+    return PlainTextResponse(path.read_text(), media_type="text/plain")
+
+
+@router.get("/sitemap.xml")
+async def sitemap_xml():
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{BASE_URL}/</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/terms</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>"""
+    return Response(content=xml, media_type="application/xml")
+
+
+@router.get("/llms.txt", response_class=PlainTextResponse)
+async def llms_txt():
+    path = STATIC_DIR / "llms.txt"
+    if not path.is_file():
+        raise HTTPException(404)
+    return PlainTextResponse(path.read_text(), media_type="text/plain")
+
+
+# --------------- Page Routes ---------------
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     user = get_current_user(request)
-    return templates.TemplateResponse("index.html", {"request": request, "user": user})
+    return templates.TemplateResponse("index.html", {"request": request, "user": user, "base_url": BASE_URL.rstrip("/")})
 
 
 @router.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
-    return templates.TemplateResponse("terms.html", {"request": request})
+    return templates.TemplateResponse("terms.html", {"request": request, "base_url": BASE_URL.rstrip("/")})
 
 
 @router.get("/room/{code}", response_class=HTMLResponse)
@@ -35,7 +77,7 @@ async def room_page(request: Request, code: str):
         return RedirectResponse("/")
     return templates.TemplateResponse(
         "room.html",
-        {"request": request, "room_code": validated_code, "user": user},
+        {"request": request, "room_code": validated_code, "user": user, "base_url": BASE_URL.rstrip("/")},
     )
 
 

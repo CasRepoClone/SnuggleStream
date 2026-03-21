@@ -1,0 +1,61 @@
+# SnuggleStream — robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /media/
+Disallow: /room/
+Disallow: /ws/
+
+# Sitemap
+Sitemap: /sitemap.xml
+
+# GenAI / LLM crawlers
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /media/
+Disallow: /room/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /media/
+Disallow: /room/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /media/
+Disallow: /room/
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /media/
+Disallow: /room/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /media/
+Disallow: /room/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /media/
+Disallow: /room/
+
+User-agent: Bytespider
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /media/
+Disallow: /room/

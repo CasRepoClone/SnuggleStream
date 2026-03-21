@@ -543,6 +543,10 @@
 
             case "viewer_update":
                 viewerCount.textContent = data.viewers;
+                // If host is screen sharing, send offers to any new viewers
+                if (screenStream && isHost()) {
+                    send({ type: "request_viewer_list" });
+                }
                 break;
 
             case "host_update":
@@ -599,6 +603,35 @@
 
             case "error":
                 toast(data.message || "Action not allowed", "error");
+                break;
+
+            // ---- WebRTC screen share ----
+            case "screen_share_start":
+                addChatEvent("started screen sharing");
+                break;
+
+            case "screen_share_stop":
+                onRemoteScreenShareStop();
+                addChatEvent("stopped screen sharing");
+                break;
+
+            case "webrtc_offer":
+                handleWebRTCOffer(data.offer, data.user_id);
+                break;
+
+            case "webrtc_answer":
+                handleWebRTCAnswer(data.answer, data.user_id);
+                break;
+
+            case "webrtc_ice":
+                handleWebRTCIce(data.candidate, data.user_id);
+                break;
+
+            case "viewer_list":
+                // Host received list of viewers to send offers to
+                if (screenStream && isHost() && data.viewers) {
+                    data.viewers.forEach(vid => createPeerForViewer(vid));
+                }
                 break;
         }
     }
@@ -797,12 +830,14 @@
 
     // ---- Source tabs (room) ----
     const srcTabs = document.querySelectorAll(".source-tabs-room .tab");
+    const screenShareInput = $("#screenShareInput");
     srcTabs.forEach(tab => {
         tab.addEventListener("click", () => {
             srcTabs.forEach(t => t.classList.remove("active"));
             tab.classList.add("active");
-            urlInputDiv.style.display    = tab.dataset.source === "url" ? "" : "none";
-            uploadInputDiv.style.display = tab.dataset.source === "upload" ? "" : "none";
+            urlInputDiv.style.display      = tab.dataset.source === "url"    ? "" : "none";
+            uploadInputDiv.style.display   = tab.dataset.source === "upload" ? "" : "none";
+            if (screenShareInput) screenShareInput.style.display = tab.dataset.source === "screen" ? "" : "none";
         });
     });
 
@@ -1064,9 +1099,205 @@
         setTimeout(() => div.remove(), 3500);
     }
 
+    // ======================================================
+    //  WebRTC Screen Sharing
+    // ======================================================
+
+    const startScreenBtn = $("#startScreenShare");
+    const stopScreenBtn  = $("#stopScreenShare");
+
+    let screenStream = null;           // host's captured MediaStream
+    let peerConnections = {};          // host side: userId -> RTCPeerConnection
+    let viewerPC = null;               // viewer side: single RTCPeerConnection
+
+    const rtcConfig = {
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    };
+
+    // --- Host: start screen capture ---
+    if (startScreenBtn) {
+        startScreenBtn.addEventListener("click", async () => {
+            if (!isHost()) { toast("Only the host can share their screen", "error"); return; }
+            try {
+                screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { cursor: "always" },
+                    audio: true
+                });
+            } catch (err) {
+                if (err.name !== "NotAllowedError") toast("Screen share failed: " + err.message, "error");
+                return;
+            }
+
+            // Show the stream locally
+            hideAllPlayers();
+            videoPlayer.srcObject = screenStream;
+            videoPlayer.muted = true;
+            videoPlayer.play().catch(() => {});
+            showNativePlayer();
+            startScreenBtn.style.display = "none";
+            stopScreenBtn.style.display = "";
+
+            // Notify all viewers via WebSocket
+            send({ type: "screen_share_start" });
+
+            // Create peer connections for every current viewer
+            const roomInfo = await fetch(`/api/rooms/${ROOM_CODE}`).then(r => r.json()).catch(() => null);
+            // We'll send offers as viewers request them via the sync re-request
+
+            // When host stops sharing via browser chrome button
+            screenStream.getVideoTracks()[0].addEventListener("ended", () => {
+                stopScreenShare();
+            });
+
+            // Send offers to all current room members
+            sendOffersToAll();
+        });
+    }
+
+    if (stopScreenBtn) {
+        stopScreenBtn.addEventListener("click", () => stopScreenShare());
+    }
+
+    function stopScreenShare() {
+        if (screenStream) {
+            screenStream.getTracks().forEach(t => t.stop());
+            screenStream = null;
+        }
+        // Close all host-side peer connections
+        Object.values(peerConnections).forEach(pc => pc.close());
+        peerConnections = {};
+
+        videoPlayer.srcObject = null;
+        hideAllPlayers();
+        videoEmpty.style.display = "";
+
+        if (startScreenBtn) startScreenBtn.style.display = "";
+        if (stopScreenBtn) stopScreenBtn.style.display = "none";
+
+        send({ type: "screen_share_stop" });
+        addChatEvent("stopped screen sharing");
+    }
+
+    // Host: send WebRTC offers to every viewer in the room
+    async function sendOffersToAll() {
+        // Request the server tell us who's connected via a viewer_update
+        // We'll piggyback on the ws connection list known server-side
+        // For simplicity, we broadcast offer and let signaling route to each user
+        send({ type: "request_viewer_list" });
+    }
+
+    // Host: create a peer connection for a specific viewer
+    async function createPeerForViewer(viewerId) {
+        if (!screenStream || peerConnections[viewerId]) return;
+
+        const pc = new RTCPeerConnection(rtcConfig);
+        peerConnections[viewerId] = pc;
+
+        screenStream.getTracks().forEach(track => {
+            pc.addTrack(track, screenStream);
+        });
+
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                send({ type: "webrtc_ice", target: viewerId, candidate: e.candidate });
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+                pc.close();
+                delete peerConnections[viewerId];
+            }
+        };
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        send({ type: "webrtc_offer", target: viewerId, offer: pc.localDescription });
+    }
+
+    // Viewer: handle incoming WebRTC offer from host
+    async function handleWebRTCOffer(offer, fromUserId) {
+        // Close existing viewer connection if any
+        if (viewerPC) { viewerPC.close(); viewerPC = null; }
+
+        const pc = new RTCPeerConnection(rtcConfig);
+        viewerPC = pc;
+
+        pc.ontrack = (e) => {
+            hideAllPlayers();
+            videoPlayer.srcObject = e.streams[0];
+            videoPlayer.muted = false;
+            videoPlayer.play().catch(() => {});
+            showNativePlayer();
+            // Hide normal video controls for screen share — it's live
+            videoControls.style.display = "none";
+        };
+
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                send({ type: "webrtc_ice", target: fromUserId, candidate: e.candidate });
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            if (pc.connectionState === "failed") {
+                toast("Screen share connection lost", "error");
+                onRemoteScreenShareStop();
+            }
+        };
+
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        send({ type: "webrtc_answer", target: fromUserId, answer: pc.localDescription });
+    }
+
+    // Host: handle incoming WebRTC answer from a viewer
+    async function handleWebRTCAnswer(answer, fromUserId) {
+        const pc = peerConnections[fromUserId];
+        if (pc) {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+    }
+
+    // Both: handle incoming ICE candidate
+    async function handleWebRTCIce(candidate, fromUserId) {
+        let pc;
+        if (isHost()) {
+            pc = peerConnections[fromUserId];
+        } else {
+            pc = viewerPC;
+        }
+        if (pc && candidate) {
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) { /* ignore late candidates */ }
+        }
+    }
+
+    // Viewer: host stopped screen share remotely
+    function onRemoteScreenShareStop() {
+        if (viewerPC) { viewerPC.close(); viewerPC = null; }
+        videoPlayer.srcObject = null;
+        hideAllPlayers();
+        videoEmpty.style.display = "";
+    }
+
     // ---- Init ----
     const userName = appData.dataset.userName;
     if (userName) nicknameInput.value = userName;
     loadRoomInfo();
     connectWS();
+
+    // Auto-start screen share if redirected from home page with ?screen=1
+    if (new URLSearchParams(window.location.search).get("screen") === "1") {
+        // Wait for WS to connect and host status to be set
+        const waitForHost = setInterval(() => {
+            if (userId && isHost() && startScreenBtn) {
+                clearInterval(waitForHost);
+                startScreenBtn.click();
+            }
+        }, 500);
+        setTimeout(() => clearInterval(waitForHost), 10000);
+    }
 })();

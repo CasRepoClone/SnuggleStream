@@ -117,6 +117,7 @@
                             <div class="source-tabs">
                                 <button type="button" class="tab active" data-source="url">URL</button>
                                 <button type="button" class="tab" data-source="file">Upload</button>
+                                <button type="button" class="tab" data-source="screen">Screen Share</button>
                                 <button type="button" class="tab" data-source="later">Set Later</button>
                             </div>
                         </div>
@@ -138,6 +139,16 @@
                                 <input type="file" id="videoFile" accept="video/*,.mkv" hidden>
                             </div>
                             <div id="fileInfo" class="file-info" style="display:none;"></div>
+                        </div>
+                        <div class="form-group source-panel" id="screenPanel" style="display: none;">
+                            <div class="screen-share-info">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                                <p>Screen sharing will begin once you create the room. You'll choose which screen or application to share.</p>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary" id="createBtn">
                             <span>Create Room</span>

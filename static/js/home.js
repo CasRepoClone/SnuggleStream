@@ -34,16 +34,18 @@
     // ---- Source tabs ----
     let selectedSource = "url";
     const tabs = $$(".source-tabs .tab");
-    const urlPanel  = $("#urlPanel");
-    const filePanel = $("#filePanel");
+    const urlPanel    = $("#urlPanel");
+    const filePanel   = $("#filePanel");
+    const screenPanel = $("#screenPanel");
 
     tabs.forEach(tab => {
         tab.addEventListener("click", () => {
             tabs.forEach(t => t.classList.remove("active"));
             tab.classList.add("active");
             selectedSource = tab.dataset.source;
-            urlPanel.style.display  = selectedSource === "url"  ? "" : "none";
-            filePanel.style.display = selectedSource === "file" ? "" : "none";
+            urlPanel.style.display    = selectedSource === "url"    ? "" : "none";
+            filePanel.style.display   = selectedSource === "file"   ? "" : "none";
+            if (screenPanel) screenPanel.style.display = selectedSource === "screen" ? "" : "none";
         });
     });
 
@@ -95,7 +97,7 @@
                 video_type: selectedSource === "file" ? "file" : "url",
                 is_private: $("#privateToggle").checked,
             };
-            if (selectedSource === "later") {
+            if (selectedSource === "later" || selectedSource === "screen") {
                 body.video_url = "";
                 body.video_type = "url";
             }
@@ -129,7 +131,7 @@
                 }
             }
 
-            window.location.href = `/room/${room.code}`;
+            window.location.href = `/room/${room.code}${selectedSource === "screen" ? "?screen=1" : ""}`;
         } catch (err) {
             overlay.style.display = "none";
             alert(err.message);

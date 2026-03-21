@@ -131,6 +131,7 @@
                     <div class="source-tabs-room">
                         <button class="tab active" data-source="url">URL</button>
                         <button class="tab" data-source="upload">Upload</button>
+                        <button class="tab" data-source="screen">Screen Share</button>
                     </div>
                     <div class="source-input" id="urlInput">
                         <input type="url" id="videoUrlInput" placeholder="https://youtube.com/watch?v=... or .mp4 URL" >
@@ -145,6 +146,19 @@
                             <div class="upload-bar"><div class="upload-bar-fill" id="uploadBarFill"></div></div>
                             <span id="uploadPercent">0%</span>
                         </div>
+                    </div>
+                    <div class="source-input screen-share-panel" id="screenShareInput" style="display:none;">
+                        <button class="btn btn-sm btn-screen" id="startScreenShare">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                            Share Screen
+                        </button>
+                        <button class="btn btn-sm btn-stop-screen" id="stopScreenShare" style="display:none;">
+                            Stop Sharing
+                        </button>
                     </div>
                 </div>
             </div>

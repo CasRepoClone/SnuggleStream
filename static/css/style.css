@@ -354,6 +354,45 @@ input:focus, select:focus {
     font-size: .85rem; margin-top: .5rem;
 }
 
+/* Screen share info (home page) */
+.screen-share-info {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: 1rem;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: .88rem;
+    line-height: 1.5;
+}
+.screen-share-info svg {
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+/* Screen share buttons (room page) */
+.screen-share-panel {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.btn-screen {
+    background: var(--primary);
+    color: #fff;
+}
+.btn-screen:hover {
+    filter: brightness(1.15);
+}
+.btn-stop-screen {
+    background: var(--red);
+    color: #fff;
+}
+.btn-stop-screen:hover {
+    filter: brightness(1.15);
+}
+
 /* ============================================
    Buttons
    ============================================ */

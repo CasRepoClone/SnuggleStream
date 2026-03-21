@@ -292,6 +292,63 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                         "user_id": user_id,
                     })
 
+            # ---- WebRTC screen-share signaling ----
+            elif msg_type == "screen_share_start":
+                if user_id != room.host_id:
+                    await websocket.send_json({"type": "error", "message": "Only the host can share their screen"})
+                    continue
+                await room_manager.broadcast(validated_code, {
+                    "type": "screen_share_start",
+                    "user_id": user_id,
+                }, exclude_user=user_id)
+
+            elif msg_type == "screen_share_stop":
+                if user_id != room.host_id:
+                    continue
+                await room_manager.broadcast(validated_code, {
+                    "type": "screen_share_stop",
+                    "user_id": user_id,
+                }, exclude_user=user_id)
+
+            elif msg_type == "webrtc_offer":
+                target = str(data.get("target", ""))
+                if user_id != room.host_id or target not in room.connections:
+                    continue
+                await room.connections[target].send_json({
+                    "type": "webrtc_offer",
+                    "offer": data.get("offer"),
+                    "user_id": user_id,
+                })
+
+            elif msg_type == "webrtc_answer":
+                target = str(data.get("target", ""))
+                if target not in room.connections:
+                    continue
+                await room.connections[target].send_json({
+                    "type": "webrtc_answer",
+                    "answer": data.get("answer"),
+                    "user_id": user_id,
+                })
+
+            elif msg_type == "webrtc_ice":
+                target = str(data.get("target", ""))
+                if target not in room.connections:
+                    continue
+                await room.connections[target].send_json({
+                    "type": "webrtc_ice",
+                    "candidate": data.get("candidate"),
+                    "user_id": user_id,
+                })
+
+            elif msg_type == "request_viewer_list":
+                if user_id != room.host_id:
+                    continue
+                viewers = [uid for uid in room.connections if uid != user_id]
+                await websocket.send_json({
+                    "type": "viewer_list",
+                    "viewers": viewers,
+                })
+
     except WebSocketDisconnect:
         pass
     except Exception:

@@ -114,13 +114,19 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         room.host_id = user_id
 
     # Send current state to the newly connected user
+    # Estimate actual playback position if video is currently playing
+    estimated_time = room.state.current_time
+    if room.state.is_playing and room.state.video_url:
+        elapsed = time.time() - room.state.last_update
+        estimated_time += elapsed * room.state.playback_rate
+
     await websocket.send_json({
         "type": "sync",
         "video_url": room.state.video_url,
         "video_type": room.state.video_type,
         "hls_url": room.state.hls_url,
         "is_playing": room.state.is_playing,
-        "current_time": room.state.current_time,
+        "current_time": estimated_time,
         "playback_rate": room.state.playback_rate,
         "viewers": room.viewer_count,
         "user_id": user_id,

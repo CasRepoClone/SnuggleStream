@@ -12,9 +12,12 @@
 
 - **Synchronized Playback** — Play, pause, and seek sync across all viewers in real time via WebSocket
 - **Multiple Video Sources** — Load from a URL (`.mp4`, `.webm`, `.m3u8`), upload a file, or set the video later
+- **Screen Sharing** — Share your screen or an application window with viewers via WebRTC peer-to-peer streaming (host only)
+- **Stream Quality Settings** — Cogwheel menu to adjust video bitrate (500 kbps – 6 Mbps) and audio bitrate (64 – 510 kbps) during screen share
 - **Room System** — Create rooms with a 6-character code, share with friends, no login required
 - **Live Chat** — Built-in chat sidebar with nickname support
 - **Custom Controls** — Full video player with progress bar, volume, playback speed, and fullscreen
+- **Help Tooltips** — Hover over `?` icons next to settings for contextual help with animated, backdrop-blurred tooltips
 - **Keyboard Shortcuts** — Space/K (play/pause), F (fullscreen), M (mute), Arrow keys (±10s seek)
 - **Responsive Design** — Works on desktop and mobile
 
@@ -24,20 +27,25 @@
 SnuggleStream/
 ├── app/
 │   ├── __init__.py
+│   ├── auth.py            # Google OAuth2 authentication
 │   ├── config.py          # App settings and paths
 │   ├── main.py            # FastAPI app factory
+│   ├── moderation.py      # Chat moderation
 │   ├── rooms.py           # Room manager (in-memory state)
+│   ├── security.py        # Security middleware
+│   ├── transcode.py       # HLS transcoding (FFmpeg)
 │   └── routers/
 │       ├── __init__.py
 │       ├── api.py          # REST API endpoints
+│       ├── auth.py         # Auth routes
 │       ├── pages.py        # HTML page routes
-│       └── ws.py           # WebSocket sync endpoint
+│       └── ws.py           # WebSocket sync + WebRTC signalling
 ├── static/
 │   ├── css/
 │   │   └── style.css       # All styles (dark theme)
 │   └── js/
 │       ├── home.js         # Home page logic
-│       └── room.js         # Room page + video sync logic
+│       └── room.js         # Room page + video sync + screen share
 ├── templates/
 │   ├── index.html          # Home page (create/join)
 │   └── room.html           # Room page (player + chat)
@@ -130,6 +138,16 @@ server {
 3. **Watch Together** — Anyone who joins sees the same video at the same position
 4. **Sync Events** — When anyone plays, pauses, or seeks, a WebSocket message is broadcast to all other viewers
 5. **Chat** — Send messages in the sidebar chat
+
+## Screen Sharing
+
+The host can share their screen or a specific application window directly with all viewers using WebRTC peer-to-peer connections.
+
+- Select **Screen Share** as the source when creating a room, or switch to the Screen Share tab inside a room
+- Audio is captured with high-quality settings (48 kHz stereo, no noise suppression)
+- Use the **cogwheel icon** (⚙) in the player controls to adjust video and audio bitrate on the fly
+- Viewers receive the stream automatically — no extra setup needed
+- Screen share stops when the host clicks Stop or closes the browser share prompt
 
 ## API Endpoints
 

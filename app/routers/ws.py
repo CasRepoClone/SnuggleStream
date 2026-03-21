@@ -128,6 +128,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         "is_playing": room.state.is_playing,
         "current_time": estimated_time,
         "playback_rate": room.state.playback_rate,
+        "screen_share_active": room.state.screen_share_active,
         "viewers": room.viewer_count,
         "user_id": user_id,
         "host_id": room.host_id,
@@ -138,6 +139,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
     await room_manager.broadcast(validated_code, {
         "type": "viewer_update",
         "viewers": room.viewer_count,
+        "new_viewer_id": user_id,
     }, exclude_user=user_id)
 
     try:
@@ -303,6 +305,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                 if user_id != room.host_id:
                     await websocket.send_json({"type": "error", "message": "Only the host can share their screen"})
                     continue
+                room.state.screen_share_active = True
                 await room_manager.broadcast(validated_code, {
                     "type": "screen_share_start",
                     "user_id": user_id,
@@ -311,6 +314,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
             elif msg_type == "screen_share_stop":
                 if user_id != room.host_id:
                     continue
+                room.state.screen_share_active = False
                 await room_manager.broadcast(validated_code, {
                     "type": "screen_share_stop",
                     "user_id": user_id,

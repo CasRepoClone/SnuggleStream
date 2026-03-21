@@ -23,6 +23,7 @@ class RoomState:
     current_time: float = 0.0
     last_update: float = field(default_factory=time.time)
     playback_rate: float = 1.0
+    screen_share_active: bool = False
 
 
 @dataclass

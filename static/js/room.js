@@ -506,6 +506,15 @@
                 viewerCount.textContent = data.viewers;
                 updateHostUI();
                 updateHostName(data.host_name);
+                // If screen sharing is active and we're a viewer, skip video load
+                // and wait for WebRTC offer from host
+                if (data.screen_share_active && data.user_id !== data.host_id) {
+                    hideAllPlayers();
+                    videoEmpty.style.display = "";
+                    videoEmpty.querySelector("h3").textContent = "Waiting for screen share…";
+                    videoEmpty.querySelector("p").textContent = "The host is sharing their screen. Connecting…";
+                    break;
+                }
                 if (data.hls_url) {
                     loadVideo(data.hls_url, data.video_type);
                 } else if (data.video_url) {
@@ -546,9 +555,9 @@
 
             case "viewer_update":
                 viewerCount.textContent = data.viewers;
-                // If host is screen sharing, send offers to any new viewers
-                if (screenStream && isHost()) {
-                    send({ type: "request_viewer_list" });
+                // If host is screen sharing, directly create peer for the new viewer
+                if (screenStream && isHost() && data.new_viewer_id) {
+                    createPeerForViewer(data.new_viewer_id);
                 }
                 break;
 
@@ -1373,6 +1382,8 @@
         videoPlayer.srcObject = null;
         hideAllPlayers();
         videoEmpty.style.display = "";
+        videoEmpty.querySelector("h3").textContent = "No Video Loaded";
+        videoEmpty.querySelector("p").textContent = "Add a video URL or upload a file below to start watching.";
     }
 
     // ---- Init ----

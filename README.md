@@ -142,3 +142,64 @@ server {
 ## License
 
 MIT
+
+## CI/CD — Auto-Deploy on Push
+
+A GitHub Actions workflow is included at `.github/workflows/deploy.yml`. Every push to `main` will SSH into your VPS, pull the latest code, install dependencies, and restart the service.
+
+### Prerequisites
+
+- A VPS running the app at `/opt/snugglestream` with the `snugglestream` systemd service
+- Git initialised on the VPS with your GitHub repo as the `origin` remote
+
+### 1. Set up the VPS repo
+
+SSH into your server and run:
+
+```bash
+cd /opt/snugglestream
+git init
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git fetch origin main
+git reset --hard origin/main
+```
+
+### 2. Generate a deploy SSH key
+
+On your local machine:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/deploy_key -N ""
+```
+
+Add the **public** key to your VPS:
+
+```bash
+ssh-copy-id -i ~/.ssh/deploy_key.pub root@YOUR_SERVER
+```
+
+Or manually:
+
+```bash
+cat ~/.ssh/deploy_key.pub | ssh root@YOUR_SERVER "cat >> ~/.ssh/authorized_keys"
+```
+
+### 3. Add the secret to GitHub
+
+1. Go to your repo → **Settings** → **Secrets and variables** → **Actions**
+2. Click **New repository secret**
+3. Name: `VPS_SSH_KEY`
+4. Value: paste the contents of `~/.ssh/deploy_key` (the **private** key, including the `BEGIN` and `END` lines)
+
+### 4. Update the workflow (if needed)
+
+Open `.github/workflows/deploy.yml` and set your server's hostname and SSH user if they differ from the defaults.
+
+### That's it
+
+Push to `main` and the workflow will:
+
+1. SSH into your server
+2. `git fetch` + `git reset --hard` to the latest commit
+3. `pip install -r requirements.txt`
+4. `systemctl restart snugglestream`

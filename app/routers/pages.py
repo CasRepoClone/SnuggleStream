@@ -20,6 +20,11 @@ async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
 
+@router.get("/terms", response_class=HTMLResponse)
+async def terms(request: Request):
+    return templates.TemplateResponse("terms.html", {"request": request})
+
+
 @router.get("/room/{code}", response_class=HTMLResponse)
 async def room_page(request: Request, code: str):
     user = get_current_user(request)

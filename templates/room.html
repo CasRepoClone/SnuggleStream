@@ -141,10 +141,24 @@
                 <div class="chat-messages" id="chatMessages">
                     <div class="chat-system">Welcome to the room! Share the code <strong id="chatRoomCode">{{ room_code }}</strong> with friends.</div>
                 </div>
+                <!-- GIF Picker -->
+                <div class="gif-picker" id="gifPicker" style="display:none;">
+                    <div class="gif-picker-header">
+                        <input type="text" id="gifSearchInput" placeholder="Search GIFs..." autocomplete="off">
+                        <button type="button" class="gif-picker-close" id="gifPickerClose" title="Close">&times;</button>
+                    </div>
+                    <div class="gif-picker-grid" id="gifGrid">
+                        <p class="gif-picker-hint">Type to search for GIFs</p>
+                    </div>
+                    <div class="gif-picker-footer">Powered by GIPHY</div>
+                </div>
                 <form class="chat-form" id="chatForm">
                     <input type="text" id="nicknameInput" placeholder="Nickname" maxlength="30" class="chat-nickname">
                     <div class="chat-input-row">
                         <input type="text" id="chatInput" placeholder="Type a message..." maxlength="500" required>
+                        <button type="button" class="btn btn-sm btn-gif" id="gifBtn" title="Send a GIF">
+                            GIF
+                        </button>
                         <button type="submit" class="btn btn-sm btn-send">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         </button>

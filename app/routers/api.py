@@ -5,10 +5,11 @@ import time
 import uuid
 
 import aiofiles
+import httpx
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
 from pydantic import BaseModel
 
-from app.config import MEDIA_DIR, MAX_UPLOAD_SIZE
+from app.config import MEDIA_DIR, MAX_UPLOAD_SIZE, GIPHY_API_KEY
 from app.rooms import room_manager
 from app.auth import get_current_user
 from app.security import (
@@ -131,6 +132,42 @@ async def check_room(request: Request, code: str):
     if not room:
         raise HTTPException(404, "Room not found")
     return {"code": room.code, "name": room.name}
+
+
+# --------------- Giphy GIF Search Proxy ---------------
+
+
+@router.get("/giphy/search")
+async def giphy_search(request: Request, q: str = "", limit: int = 20):
+    """Proxy Giphy GIF search so the API key stays server-side."""
+    _require_auth(request)
+    if not GIPHY_API_KEY:
+        raise HTTPException(503, "GIF search is not configured")
+    q = q.strip()[:100]
+    if not q:
+        raise HTTPException(400, "Missing search query")
+    limit = max(1, min(limit, 30))
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(
+            "https://api.giphy.com/v1/gifs/search",
+            params={
+                "q": q,
+                "api_key": GIPHY_API_KEY,
+                "limit": limit,
+                "rating": "pg-13",
+            },
+        )
+        if resp.status_code != 200:
+            raise HTTPException(502, "Giphy API error")
+        data = resp.json()
+    results = []
+    for item in data.get("data", []):
+        images = item.get("images", {})
+        preview = images.get("fixed_width_small", {}).get("url", "")
+        full = images.get("fixed_width", {}).get("url", "") or preview
+        if preview and full:
+            results.append({"preview": preview, "url": full})
+    return {"results": results}
 
 
 # --------------- Media Upload ---------------

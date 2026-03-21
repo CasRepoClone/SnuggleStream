@@ -356,6 +356,38 @@ input:focus, select:focus {
     font-size: .85rem;
     border-top: 1px solid var(--border);
 }
+.footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.footer-link {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: .8rem;
+    opacity: .7;
+    transition: opacity .2s;
+    position: absolute;
+    left: 1.5rem;
+}
+.footer-link:hover { opacity: 1; }
+.footer-row { position: relative; }
+
+/* TOS page */
+.hero-sm { padding: 1.2rem 0; }
+.hero-sm h1 { font-size: 1.3rem; }
+.tos-content { max-width: 740px; padding: 2rem 1.5rem 3rem; }
+.tos-content h2 { font-size: 1.6rem; margin-bottom: .3rem; color: var(--text); }
+.tos-content h3 { font-size: 1.1rem; margin: 1.8rem 0 .5rem; color: var(--primary); }
+.tos-content p { color: var(--text-dim); line-height: 1.7; margin-bottom: .8rem; }
+.tos-content ul { color: var(--text-dim); line-height: 1.7; margin: .5rem 0 1rem 1.5rem; }
+.tos-content li { margin-bottom: .5rem; }
+.tos-updated { font-size: .82rem; opacity: .6; margin-bottom: 1.5rem; }
+.tos-back { margin-top: 2.5rem; }
+.tos-back a { color: var(--primary); text-decoration: none; }
+.tos-back a:hover { text-decoration: underline; }
 
 /* ============================================
    Overlay / Spinner
@@ -674,6 +706,101 @@ input:focus, select:focus {
     background: var(--primary);
 }
 .btn-send svg { width: 16px; height: 16px; }
+.btn-gif {
+    padding: .4rem .55rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    line-height: 1;
+    transition: border-color .15s, color .15s;
+}
+.btn-gif:hover, .btn-gif.active {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* GIF Picker */
+.gif-picker {
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    max-height: 320px;
+}
+.gif-picker-header {
+    display: flex;
+    gap: .4rem;
+    padding: .5rem .75rem;
+    border-bottom: 1px solid var(--border);
+}
+.gif-picker-header input {
+    flex: 1;
+    padding: .4rem .6rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: .82rem;
+    outline: none;
+}
+.gif-picker-header input:focus { border-color: var(--primary); }
+.gif-picker-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 .3rem;
+    line-height: 1;
+}
+.gif-picker-close:hover { color: var(--text); }
+.gif-picker-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: .5rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .4rem;
+    min-height: 100px;
+}
+.gif-picker-hint {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: .82rem;
+    padding: 1.5rem 0;
+}
+.gif-picker-grid img {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: transform .1s;
+    display: block;
+}
+.gif-picker-grid img:hover {
+    transform: scale(1.04);
+}
+.gif-picker-footer {
+    padding: .3rem .75rem;
+    font-size: .68rem;
+    color: var(--text-dim);
+    text-align: right;
+    border-top: 1px solid var(--border);
+}
+
+/* Chat GIF messages */
+.chat-msg-gif {
+    max-width: 200px;
+    border-radius: var(--radius-sm);
+    margin-top: .2rem;
+    display: block;
+}
 
 /* ============================================
    Toast

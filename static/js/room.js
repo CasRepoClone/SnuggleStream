@@ -431,6 +431,10 @@
                 addChatMessage(data.nickname, data.text, data.user_id === userId);
                 break;
 
+            case "gif":
+                addChatGif(data.nickname, data.url, data.user_id === userId);
+                break;
+
             case "chat_blocked":
                 toast(data.reason || "Message blocked", "error");
                 break;
@@ -717,6 +721,11 @@
         navigator.clipboard.writeText(ROOM_CODE).then(() => toast("Code copied!", "info"));
     });
 
+    // ---- Smart auto-scroll: only scroll down if user is near the bottom ----
+    function isNearBottom() {
+        return chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 80;
+    }
+
     // ---- Chat ----
     chatForm.addEventListener("submit", e => {
         e.preventDefault();
@@ -725,22 +734,109 @@
         const nickname = nicknameInput.value.trim() || "Anonymous";
         send({ type: "chat", text, nickname });
         chatInput.value = "";
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
     function addChatMessage(name, text, isMe) {
+        const near = isMe || isNearBottom();
         const div = document.createElement("div");
         div.className = "chat-msg";
         div.innerHTML = `<span class="chat-msg-name" style="${isMe ? 'color:var(--accent)' : ''}">${escapeHtml(name)}</span><span class="chat-msg-text">${escapeHtml(text)}</span>`;
         chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        if (near) chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addChatGif(name, url, isMe) {
+        const near = isMe || isNearBottom();
+        const div = document.createElement("div");
+        div.className = "chat-msg";
+        const nameSpan = `<span class="chat-msg-name" style="${isMe ? 'color:var(--accent)' : ''}">${escapeHtml(name)}</span>`;
+        div.innerHTML = nameSpan;
+        const img = document.createElement("img");
+        img.className = "chat-msg-gif";
+        img.src = url;
+        img.alt = "GIF";
+        img.loading = "lazy";
+        img.onload = () => { if (near) chatMessages.scrollTop = chatMessages.scrollHeight; };
+        div.appendChild(img);
+        chatMessages.appendChild(div);
+        if (near) chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     function addChatEvent(text) {
+        const near = isNearBottom();
         const div = document.createElement("div");
         div.className = "chat-msg-event";
         div.textContent = `• ${text}`;
         chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        if (near) chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // ---- GIF Picker ----
+    const gifBtn = $("#gifBtn");
+    const gifPicker = $("#gifPicker");
+    const gifSearchInput = $("#gifSearchInput");
+    const gifGrid = $("#gifGrid");
+    const gifPickerClose = $("#gifPickerClose");
+    let gifSearchTimeout = null;
+
+    gifBtn.addEventListener("click", () => {
+        const open = gifPicker.style.display !== "none";
+        gifPicker.style.display = open ? "none" : "";
+        gifBtn.classList.toggle("active", !open);
+        if (!open) gifSearchInput.focus();
+    });
+
+    gifPickerClose.addEventListener("click", () => {
+        gifPicker.style.display = "none";
+        gifBtn.classList.remove("active");
+    });
+
+    gifSearchInput.addEventListener("input", () => {
+        clearTimeout(gifSearchTimeout);
+        const q = gifSearchInput.value.trim();
+        if (!q) {
+            gifGrid.innerHTML = '<p class="gif-picker-hint">Type to search for GIFs</p>';
+            return;
+        }
+        gifSearchTimeout = setTimeout(() => searchGifs(q), 400);
+    });
+
+    async function searchGifs(query) {
+        gifGrid.innerHTML = '<p class="gif-picker-hint">Searching...</p>';
+        try {
+            const res = await fetch(`/api/giphy/search?q=${encodeURIComponent(query)}&limit=20`);
+            if (res.status === 503) {
+                gifGrid.innerHTML = '<p class="gif-picker-hint">GIF search not configured</p>';
+                return;
+            }
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            if (!data.results || !data.results.length) {
+                gifGrid.innerHTML = '<p class="gif-picker-hint">No GIFs found</p>';
+                return;
+            }
+            gifGrid.innerHTML = "";
+            data.results.forEach(g => {
+                const img = document.createElement("img");
+                img.src = g.preview;
+                img.alt = "GIF";
+                img.loading = "lazy";
+                img.addEventListener("click", () => sendGif(g.url));
+                gifGrid.appendChild(img);
+            });
+        } catch {
+            gifGrid.innerHTML = '<p class="gif-picker-hint">Search failed</p>';
+        }
+    }
+
+    function sendGif(url) {
+        const nickname = nicknameInput.value.trim() || "Anonymous";
+        send({ type: "gif", url, nickname });
+        gifPicker.style.display = "none";
+        gifBtn.classList.remove("active");
+        gifSearchInput.value = "";
+        gifGrid.innerHTML = '<p class="gif-picker-hint">Type to search for GIFs</p>';
     }
 
     // ---- Load Room Info ----

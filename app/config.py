@@ -25,3 +25,6 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 SESSION_SECRET = os.getenv("SESSION_SECRET", "change-me-to-a-random-string")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+
+# Giphy GIF API (get from https://developers.giphy.com/)
+GIPHY_API_KEY = os.getenv("GIPHY_API_KEY", "")

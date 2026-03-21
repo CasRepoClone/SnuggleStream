@@ -257,6 +257,20 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                     "host_name": room.user_names.get(room.host_id, "Anonymous"),
                 })
 
+            elif msg_type == "gif":
+                gif_url = str(data.get("url", "")).strip()
+                nickname = sanitize_text(data.get("nickname", ""), 30) or "Anonymous"
+                # Only allow Giphy media URLs
+                if gif_url and gif_url.startswith("https://media") and ".giphy.com/" in gif_url:
+                    if not chat_rate_limiter.is_allowed(user_id):
+                        continue
+                    await room_manager.broadcast(validated_code, {
+                        "type": "gif",
+                        "url": gif_url,
+                        "nickname": nickname,
+                        "user_id": user_id,
+                    })
+
             elif msg_type == "chat":
                 text = sanitize_text(data.get("text", ""), 500)
                 nickname = sanitize_text(data.get("nickname", ""), 30) or "Anonymous"

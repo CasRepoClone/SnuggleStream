@@ -118,6 +118,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         "type": "sync",
         "video_url": room.state.video_url,
         "video_type": room.state.video_type,
+        "hls_url": room.state.hls_url,
         "is_playing": room.state.is_playing,
         "current_time": room.state.current_time,
         "playback_rate": room.state.playback_rate,
@@ -211,6 +212,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
 
                 room.state.video_url = video_url
                 room.state.video_type = video_type
+                room.state.hls_url = ""
                 room.state.is_playing = False
                 room.state.current_time = 0.0
                 room.state.last_update = time.time()
@@ -248,6 +250,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                     "type": "sync",
                     "video_url": room.state.video_url,
                     "video_type": room.state.video_type,
+                    "hls_url": room.state.hls_url,
                     "is_playing": room.state.is_playing,
                     "current_time": room.state.current_time,
                     "playback_rate": room.state.playback_rate,

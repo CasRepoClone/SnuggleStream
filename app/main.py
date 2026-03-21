@@ -12,11 +12,11 @@ from app.routers import api, ws, pages, auth
 
 CSP_POLICY = (
     "default-src 'self'; "
-    "script-src 'self' https://www.youtube.com https://s.ytimg.com; "
+    "script-src 'self' https://www.youtube.com https://s.ytimg.com https://cdn.jsdelivr.net; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "
     "img-src 'self' https: data:; "
-    "media-src 'self' https: http:; "
+    "media-src 'self' blob: https: http:; "
     "connect-src 'self' ws: wss:; "
     "frame-src https://www.youtube.com https://www.youtube-nocookie.com; "
     "object-src 'none'; "

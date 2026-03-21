@@ -587,6 +587,53 @@ input:focus, select:focus {
     color: var(--text);
 }
 
+/* Quality selector */
+.quality-selector {
+    position: relative;
+    display: inline-block;
+}
+.quality-btn {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    min-width: 48px;
+}
+.quality-btn span {
+    pointer-events: none;
+}
+.quality-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 6px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    min-width: 90px;
+    z-index: 50;
+    box-shadow: var(--shadow);
+}
+.quality-item {
+    display: block;
+    width: 100%;
+    padding: .45rem .8rem;
+    font-size: .82rem;
+    color: var(--text);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font);
+}
+.quality-item:hover {
+    background: var(--surface);
+}
+.quality-item.active {
+    color: var(--primary);
+    font-weight: 600;
+}
+
 /* Source panel in room */
 .source-panel-room {
     padding: .8rem 1rem;

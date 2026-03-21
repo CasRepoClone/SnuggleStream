@@ -1118,13 +1118,21 @@
     if (startScreenBtn) {
         startScreenBtn.addEventListener("click", async () => {
             if (!isHost()) { toast("Only the host can share their screen", "error"); return; }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                toast("Screen sharing is not supported in your browser. Make sure you're using HTTPS.", "error");
+                return;
+            }
             try {
                 screenStream = await navigator.mediaDevices.getDisplayMedia({
                     video: { cursor: "always" },
                     audio: true
                 });
             } catch (err) {
-                if (err.name !== "NotAllowedError") toast("Screen share failed: " + err.message, "error");
+                if (err.name === "NotAllowedError") {
+                    toast("Screen share was cancelled", "info");
+                } else {
+                    toast("Screen share failed: " + err.message, "error");
+                }
                 return;
             }
 

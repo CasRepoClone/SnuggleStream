@@ -100,19 +100,20 @@
                     <p class="card-desc">Start a new watch party and invite friends with the room code.</p>
                     <form id="createForm" class="form">
                         <div class="form-group">
-                            <label for="roomName">Room Name</label>
+                            <label for="roomName" class="help-wrap">Room Name<span class="help-icon">?<span class="help-tip">Give your watch party a name so friends can recognise it</span></span></label>
                             <input type="text" id="roomName" placeholder="Movie Night" maxlength="20" required>
                         </div>
                         <div class="form-group toggle-group">
-                            <label class="toggle-label" for="privateToggle">
+                            <label class="toggle-label help-wrap" for="privateToggle">
                                 <input type="checkbox" id="privateToggle">
                                 <span class="toggle-switch"></span>
                                 <span class="toggle-text">Private Room</span>
+                                <span class="help-icon">?<span class="help-tip">Private rooms won't appear in the public list — only people with the code can join</span></span>
                             </label>
                             <span class="hint">Only joinable by sharing the room code</span>
                         </div>
                         <div class="form-group">
-                            <label>Video Source</label>
+                            <label class="help-wrap">Video Source<span class="help-icon">?<span class="help-tip">Choose how to provide the video: paste a URL, upload a file, or set it after creating the room</span></span></label>
                             <div class="source-tabs">
                                 <button type="button" class="tab active" data-source="url">URL</button>
                                 <button type="button" class="tab" data-source="file">Upload</button>
@@ -120,12 +121,12 @@
                             </div>
                         </div>
                         <div class="form-group source-panel" id="urlPanel">
-                            <label for="videoUrl">Video URL</label>
+                            <label for="videoUrl" class="help-wrap">Video URL<span class="help-icon">?<span class="help-tip">Paste a direct link to a video file (.mp4, .webm, .mkv, .m3u8)</span></span></label>
                             <input type="url" id="videoUrl" placeholder="https://example.com/video.mp4">
                             <span class="hint">Direct link to a video file (.mp4, .webm, .mkv, .m3u8)</span>
                         </div>
                         <div class="form-group source-panel" id="filePanel" style="display: none;">
-                            <label for="videoFile">Upload Video</label>
+                            <label for="videoFile" class="help-wrap">Upload Video<span class="help-icon">?<span class="help-tip">Upload a video file from your device — it will be transcoded for streaming</span></span></label>
                             <div class="file-drop" id="fileDrop">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -161,7 +162,7 @@
                     <p class="card-desc">Enter a room code to join an existing watch party.</p>
                     <form id="joinForm" class="form">
                         <div class="form-group">
-                            <label for="roomCode">Room Code</label>
+                            <label for="roomCode" class="help-wrap">Room Code<span class="help-icon">?<span class="help-tip">Enter the 6-character code shared by the room host</span></span></label>
                             <input type="text" id="roomCode" placeholder="ABC123" maxlength="6"
                                    pattern="[A-Za-z0-9]{6}" style="text-transform: uppercase; letter-spacing: 0.3em; font-size: 1.4rem; text-align: center;" required>
                         </div>

@@ -25,6 +25,14 @@ async def robots_txt():
     return PlainTextResponse(path.read_text(), media_type="text/plain")
 
 
+@router.get("/ads.txt", response_class=PlainTextResponse)
+async def ads_txt():
+    path = STATIC_DIR / "ads.txt"
+    if not path.is_file():
+        raise HTTPException(404)
+    return PlainTextResponse(path.read_text(), media_type="text/plain")
+
+
 @router.get("/sitemap.xml")
 async def sitemap_xml():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")

@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.config import STATIC_DIR, MEDIA_DIR, SESSION_SECRET, BASE_URL
@@ -57,6 +58,8 @@ app = FastAPI(title="SnuggleStream", version="1.0.0")
 
 # Middleware (outermost first)
 app.add_middleware(SecurityHeadersMiddleware)
+if BASE_URL.startswith("https://"):
+    app.add_middleware(HTTPSRedirectMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,

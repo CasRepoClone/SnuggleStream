@@ -8,7 +8,7 @@ Disallow: /room/
 Disallow: /ws/
 
 # Sitemap
-Sitemap: /sitemap.xml
+Sitemap: https://snugglestream.uk/sitemap.xml
 
 # GenAI / LLM crawlers
 User-agent: GPTBot

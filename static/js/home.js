@@ -203,43 +203,4 @@
 
     loadRooms();
     setInterval(loadRooms, 10000);
-
-    // ---- Alias Setting ----
-    const aliasInput = $("#aliasInput");
-    const randomAliasBtn = $("#randomAliasBtn");
-
-    function generateAnonAlias() {
-        const num = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
-        return "anon_" + num;
-    }
-
-    if (aliasInput) {
-        // Load saved alias or generate default
-        const saved = localStorage.getItem("snuggle_alias");
-        if (saved) {
-            aliasInput.value = saved;
-        } else {
-            const defaultAlias = generateAnonAlias();
-            aliasInput.value = defaultAlias;
-            localStorage.setItem("snuggle_alias", defaultAlias);
-        }
-
-        // Save on change
-        aliasInput.addEventListener("input", () => {
-            const val = aliasInput.value.trim();
-            if (val) {
-                localStorage.setItem("snuggle_alias", val);
-            } else {
-                localStorage.removeItem("snuggle_alias");
-            }
-        });
-    }
-
-    if (randomAliasBtn) {
-        randomAliasBtn.addEventListener("click", () => {
-            const alias = generateAnonAlias();
-            if (aliasInput) aliasInput.value = alias;
-            localStorage.setItem("snuggle_alias", alias);
-        });
-    }
 })();

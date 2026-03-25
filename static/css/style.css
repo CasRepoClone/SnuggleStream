@@ -465,62 +465,6 @@ input:focus, select:focus {
 .room-li-viewers { color: var(--green); }
 
 /* ============================================
-   Alias Setting
-   ============================================ */
-.alias-setting {
-    margin-top: 1.5rem;
-    padding-top: 1.2rem;
-    padding-bottom: .5rem;
-    border-top: 1px solid var(--border);
-}
-.alias-setting label {
-    display: block;
-    font-size: .88rem;
-    font-weight: 500;
-    margin-bottom: .4rem;
-}
-.alias-input {
-    width: 100%;
-    box-sizing: border-box;
-    font-family: var(--font);
-    font-size: .92rem;
-    padding: .55rem .75rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    outline: none;
-    transition: border-color .2s;
-    margin-bottom: .5rem;
-}
-.alias-input:focus {
-    border-color: var(--primary);
-}
-.alias-input::placeholder {
-    color: var(--text-dim);
-    opacity: .6;
-}
-.btn-alias-rand {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    padding: .4rem .75rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-dim);
-    font-family: var(--font);
-    font-size: .8rem;
-    cursor: pointer;
-    transition: all .15s;
-    margin-bottom: .4rem;
-}
-.btn-alias-rand:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-}
-
-/* ============================================
    Footer
    ============================================ */
 .footer {

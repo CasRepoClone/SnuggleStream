@@ -519,7 +519,8 @@
         ws.onopen = () => {
             toast("Connected to room", "success");
             // Tell server our display name and picture
-            const name = appData.dataset.userName || "Anonymous";
+            const alias = localStorage.getItem("snuggle_alias");
+            const name = alias || appData.dataset.userName || "Anonymous";
             const picture = appData.dataset.userPicture || "";
             send({ type: "set_name", name: name, picture: picture });
         };
@@ -2110,7 +2111,8 @@
     }
 
     // ---- Init ----
-    const userName = appData.dataset.userName;
+    const storedAlias = localStorage.getItem("snuggle_alias");
+    const userName = storedAlias || appData.dataset.userName;
     if (userName) nicknameInput.value = userName;
     loadRoomInfo();
     connectWS();

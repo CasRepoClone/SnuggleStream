@@ -465,6 +465,63 @@ input:focus, select:focus {
 .room-li-viewers { color: var(--green); }
 
 /* ============================================
+   Alias Setting
+   ============================================ */
+.alias-setting {
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+}
+.alias-setting label {
+    display: block;
+    font-size: .88rem;
+    font-weight: 500;
+    margin-bottom: .4rem;
+}
+.alias-row {
+    display: flex;
+    gap: .4rem;
+}
+.alias-input {
+    flex: 1;
+    font-family: var(--font);
+    font-size: .92rem;
+    padding: .55rem .75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    outline: none;
+    transition: border-color .2s;
+}
+.alias-input:focus {
+    border-color: var(--primary);
+}
+.alias-input::placeholder {
+    color: var(--text-dim);
+    opacity: .6;
+}
+.btn-alias-rand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all .15s;
+    flex-shrink: 0;
+}
+.btn-alias-rand:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* ============================================
    Footer
    ============================================ */
 .footer {

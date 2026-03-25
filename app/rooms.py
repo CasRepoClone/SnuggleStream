@@ -24,6 +24,7 @@ class RoomState:
     last_update: float = field(default_factory=time.time)
     playback_rate: float = 1.0
     screen_share_active: bool = False
+    countdown_end: float = 0.0  # Unix timestamp when countdown finishes (0 = no countdown)
 
 
 @dataclass
@@ -36,6 +37,7 @@ class Room:
     connections: dict[str, WebSocket] = field(default_factory=dict)
     host_id: str = ""
     user_names: dict[str, str] = field(default_factory=dict)
+    user_pictures: dict[str, str] = field(default_factory=dict)  # user_id -> picture URL
     # Voting state
     voting_active: bool = False
     votes: dict[str, str] = field(default_factory=dict)  # voter_id -> candidate_id

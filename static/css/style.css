@@ -1489,3 +1489,455 @@ input:focus, select:focus {
     width: 100%;
     height: 100%;
 }
+
+/* ============================================
+   Sidebar Tabs
+   ============================================ */
+.sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.sidebar-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    padding: .65rem .5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--font);
+    font-size: .82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+}
+.sidebar-tab:hover { color: var(--text); }
+.sidebar-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+.sidebar-tab svg { flex-shrink: 0; }
+.people-count {
+    background: var(--primary);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 700;
+    padding: .1rem .4rem;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.sidebar-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+.sidebar-panel:not(.active) { display: none; }
+
+/* Chat panel inherits existing styles */
+#chatPanel .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* ============================================
+   People Panel — Media Permissions Banner
+   ============================================ */
+.media-permissions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .55rem .75rem;
+    background: rgba(242,160,191,.08);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.media-perm-text {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .78rem;
+    color: var(--text-dim);
+}
+.media-perm-text svg {
+    flex-shrink: 0;
+    color: var(--primary);
+}
+.btn-perm {
+    white-space: nowrap;
+    font-size: .72rem;
+    padding: .3rem .7rem;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: opacity .15s;
+}
+.btn-perm:hover { opacity: .85; }
+.media-permissions.granted {
+    background: rgba(110,210,140,.1);
+}
+.media-permissions.granted .media-perm-text svg {
+    color: #6ed28c;
+}
+.media-permissions.granted .media-perm-text {
+    color: #6ed28c;
+}
+.media-permissions.denied {
+    background: rgba(240,111,126,.1);
+}
+.media-permissions.denied .media-perm-text svg {
+    color: var(--red);
+}
+.media-permissions.denied .media-perm-text {
+    color: var(--red);
+}
+
+/* ============================================
+   People Panel — Media Controls
+   ============================================ */
+.media-controls {
+    display: flex;
+    gap: .4rem;
+    padding: .6rem .75rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.media-ctrl-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .2rem;
+    padding: .5rem .3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    font-family: var(--font);
+    font-size: .68rem;
+    cursor: pointer;
+    transition: all .15s;
+}
+.media-ctrl-btn svg { width: 20px; height: 20px; }
+.media-ctrl-btn:hover {
+    border-color: var(--primary);
+    color: var(--text);
+}
+.media-ctrl-btn.active {
+    background: rgba(242,160,191,.15);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* ============================================
+   Webcam Overlay (top-left of video)
+   ============================================ */
+.webcam-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    padding: .4rem;
+    pointer-events: none;
+    max-width: 50%;
+    max-height: 50%;
+    overflow: hidden;
+}
+.webcam-overlay:empty { display: none; }
+.webcam-tile {
+    position: relative;
+    background: #000;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    width: 120px;
+    aspect-ratio: 4/3;
+    pointer-events: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,.5);
+    border: 1px solid rgba(255,255,255,.15);
+}
+.webcam-tile video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.webcam-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: .2rem .4rem;
+    background: rgba(0,0,0,.6);
+    color: #fff;
+    font-size: .68rem;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================
+   User List
+   ============================================ */
+.user-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: .5rem .75rem;
+}
+.user-list-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .5rem;
+    border-radius: var(--radius-sm);
+    transition: background .15s;
+}
+.user-list-item:hover {
+    background: var(--surface);
+}
+.user-list-item.is-me {
+    background: rgba(242,160,191,.06);
+}
+.user-list-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    object-fit: cover;
+}
+.user-list-item.is-me .user-list-avatar {
+    border-color: var(--primary);
+}
+.user-list-name {
+    flex: 1;
+    font-size: .85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.user-list-badges {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    flex-shrink: 0;
+}
+.user-list-host-badge {
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+}
+.user-list-mute-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all .15s;
+}
+.user-list-mute-btn:hover {
+    border-color: var(--primary);
+    color: var(--text);
+}
+.user-list-mute-btn.muted {
+    background: rgba(240,111,126,.15);
+    border-color: var(--red);
+    color: var(--red);
+}
+.user-list-vol-badge {
+    font-size: .65rem;
+    color: var(--text-dim);
+    background: var(--surface);
+    padding: .1rem .35rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+}
+
+/* ============================================
+   User Volume Context Menu
+   ============================================ */
+.user-ctx-menu {
+    position: fixed;
+    z-index: 5000;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    padding: .5rem;
+    min-width: 200px;
+    animation: fadeIn .12s ease-out;
+}
+.user-ctx-header {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--text);
+    padding: .25rem .4rem .45rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: .4rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.user-ctx-row {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .3rem .4rem;
+}
+.user-ctx-row svg {
+    flex-shrink: 0;
+    color: var(--text-dim);
+}
+.user-vol-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+.user-vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: none;
+}
+.user-vol-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: none;
+}
+#userVolLabel {
+    font-size: .72rem;
+    color: var(--text-dim);
+    min-width: 32px;
+    text-align: right;
+}
+.user-ctx-mute-btn {
+    display: block;
+    width: 100%;
+    padding: .4rem;
+    margin-top: .3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: .78rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all .15s;
+}
+.user-ctx-mute-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.user-ctx-mute-btn.muted {
+    background: rgba(240,111,126,.12);
+    border-color: var(--red);
+    color: var(--red);
+}
+
+/* ============================================
+   Countdown Overlay
+   ============================================ */
+.countdown-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 17, 24, .85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2500;
+    animation: fadeIn .3s ease-out;
+}
+.countdown-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3rem 2.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+}
+.countdown-card h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #f7b8d0, #e87faa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.countdown-time {
+    font-size: 3.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    letter-spacing: .05em;
+    margin-bottom: .75rem;
+}
+.countdown-subtitle {
+    color: var(--text-dim);
+    font-size: .88rem;
+    margin-bottom: 1.5rem;
+}
+.btn-cancel-countdown {
+    background: var(--red);
+    color: #fff;
+}
+.btn-cancel-countdown:hover { filter: brightness(1.15); }
+
+/* Countdown panel in source tabs */
+.countdown-panel {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.countdown-panel input[type="number"] {
+    width: 100px;
+    padding: .5rem .6rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: .88rem;
+}
+
+/* ============================================
+   Responsive — People panel
+   ============================================ */
+@media (max-width: 900px) {
+    .webcam-tile {
+        width: 90px;
+    }
+}

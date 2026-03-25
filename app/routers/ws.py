@@ -10,12 +10,15 @@ from app.moderation import moderate_chat, chat_rate_limiter
 from app.security import (
     sanitize_text,
     validate_current_time,
+    validate_image_url,
     validate_playback_rate,
     validate_room_code,
     validate_video_url,
 )
 
 router = APIRouter()
+
+MAX_COUNTDOWN_MINUTES = 1440  # 24 hours max
 
 
 def _candidates_list(room):
@@ -24,6 +27,27 @@ def _candidates_list(room):
         {"user_id": uid, "name": room.user_names.get(uid, "Anonymous")}
         for uid in room.connections
     ]
+
+
+def _user_list(room):
+    """Build the full user list for broadcasting."""
+    return [
+        {
+            "user_id": uid,
+            "name": room.user_names.get(uid, "Anonymous"),
+            "picture": room.user_pictures.get(uid, ""),
+            "is_host": uid == room.host_id,
+        }
+        for uid in room.connections
+    ]
+
+
+async def _broadcast_user_list(room, code):
+    """Send the current user list to everyone in the room."""
+    await room_manager.broadcast(code, {
+        "type": "user_list",
+        "users": _user_list(room),
+    })
 
 
 async def _start_vote(room, code):
@@ -129,6 +153,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         "current_time": estimated_time,
         "playback_rate": room.state.playback_rate,
         "screen_share_active": room.state.screen_share_active,
+        "countdown_end": room.state.countdown_end,
         "viewers": room.viewer_count,
         "user_id": user_id,
         "host_id": room.host_id,
@@ -142,6 +167,9 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         "new_viewer_id": user_id,
     }, exclude_user=user_id)
 
+    # Broadcast updated user list to everyone
+    await _broadcast_user_list(room, validated_code)
+
     try:
         while True:
             data = await websocket.receive_json()
@@ -153,7 +181,12 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
 
             if msg_type == "set_name":
                 name = sanitize_text(data.get("name", ""), 50) or "Anonymous"
+                picture = sanitize_text(data.get("picture", ""), 512)
                 room.user_names[user_id] = name
+                if picture and validate_image_url(picture):
+                    room.user_pictures[user_id] = picture
+                # Broadcast updated user list
+                await _broadcast_user_list(room, validated_code)
                 # Broadcast updated host name if this user is host
                 if user_id == room.host_id:
                     await room_manager.broadcast(validated_code, {
@@ -266,6 +299,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                     "user_id": user_id,
                     "host_id": room.host_id,
                     "host_name": room.user_names.get(room.host_id, "Anonymous"),
+                    "countdown_end": room.state.countdown_end,
                 })
 
             elif msg_type == "gif":
@@ -359,6 +393,80 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                     "viewers": viewers,
                 })
 
+            # ---- Countdown timer ----
+            elif msg_type == "countdown_start":
+                if user_id != room.host_id:
+                    await websocket.send_json({"type": "error", "message": "Only the host can set a countdown"})
+                    continue
+                try:
+                    minutes = float(data.get("minutes", 0))
+                except (TypeError, ValueError):
+                    minutes = 0
+                if minutes <= 0 or minutes > MAX_COUNTDOWN_MINUTES:
+                    await websocket.send_json({"type": "error", "message": "Invalid countdown duration"})
+                    continue
+                room.state.countdown_end = time.time() + (minutes * 60)
+                await room_manager.broadcast(validated_code, {
+                    "type": "countdown_start",
+                    "countdown_end": room.state.countdown_end,
+                })
+
+            elif msg_type == "countdown_cancel":
+                if user_id != room.host_id:
+                    continue
+                room.state.countdown_end = 0.0
+                await room_manager.broadcast(validated_code, {
+                    "type": "countdown_cancel",
+                })
+
+            # ---- WebRTC media (webcam + voice) mesh signaling ----
+            elif msg_type == "media_offer":
+                target = str(data.get("target", ""))
+                if target not in room.connections:
+                    continue
+                await room.connections[target].send_json({
+                    "type": "media_offer",
+                    "offer": data.get("offer"),
+                    "user_id": user_id,
+                    "media_types": data.get("media_types", []),
+                })
+
+            elif msg_type == "media_answer":
+                target = str(data.get("target", ""))
+                if target not in room.connections:
+                    continue
+                await room.connections[target].send_json({
+                    "type": "media_answer",
+                    "answer": data.get("answer"),
+                    "user_id": user_id,
+                })
+
+            elif msg_type == "media_ice":
+                target = str(data.get("target", ""))
+                if target not in room.connections:
+                    continue
+                await room.connections[target].send_json({
+                    "type": "media_ice",
+                    "candidate": data.get("candidate"),
+                    "user_id": user_id,
+                })
+
+            elif msg_type == "media_state":
+                # Broadcast webcam/mic state changes to all users
+                await room_manager.broadcast(validated_code, {
+                    "type": "media_state",
+                    "user_id": user_id,
+                    "webcam": bool(data.get("webcam", False)),
+                    "mic": bool(data.get("mic", False)),
+                }, exclude_user=user_id)
+
+            elif msg_type == "media_stop":
+                # User stopped sharing webcam/mic
+                await room_manager.broadcast(validated_code, {
+                    "type": "media_stop",
+                    "user_id": user_id,
+                }, exclude_user=user_id)
+
     except WebSocketDisconnect:
         pass
     except Exception:
@@ -366,15 +474,23 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
     finally:
         chat_rate_limiter.cleanup(user_id)
         room.user_names.pop(user_id, None)
+        room.user_pictures.pop(user_id, None)
         # Remove vote if they were voting
         room.votes.pop(user_id, None)
         was_host = user_id == room.host_id
         room_deleted = room_manager.disconnect(validated_code, user_id)
         if not room_deleted:
+            # Broadcast media_stop for this user so peers clean up
+            await room_manager.broadcast(validated_code, {
+                "type": "media_stop",
+                "user_id": user_id,
+            })
             await room_manager.broadcast(validated_code, {
                 "type": "viewer_update",
                 "viewers": room.viewer_count,
             })
+            # Broadcast updated user list
+            await _broadcast_user_list(room, validated_code)
             if was_host:
                 room.host_id = ""
                 await _start_vote(room, validated_code)

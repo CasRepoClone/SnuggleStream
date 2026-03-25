@@ -52,6 +52,40 @@
     const voteCandidates  = $("#voteCandidates");
     const voteTimer       = $("#voteTimer");
 
+    // People / Media elements
+    const peopleCount     = $("#peopleCount");
+    const userListEl      = $("#userList");
+    const webcamGrid      = $("#webcamGrid");
+    const toggleMicBtn    = $("#toggleMicBtn");
+    const toggleDeafenBtn = $("#toggleDeafenBtn");
+    const toggleWebcamBtn = $("#toggleWebcamBtn");
+    const micOnIcon       = $("#micOnIcon");
+    const micOffIcon      = $("#micOffIcon");
+    const camOnIcon       = $("#camOnIcon");
+    const camOffIcon      = $("#camOffIcon");
+    const deafenOffIcon   = $("#deafenOffIcon");
+    const deafenOnIcon    = $("#deafenOnIcon");
+
+    // Permissions elements
+    const mediaPermissions = $("#mediaPermissions");
+    const permStatusText   = $("#permStatusText");
+    const grantPermBtn     = $("#grantPermBtn");
+
+    // User context menu elements
+    const userCtxMenu     = $("#userCtxMenu");
+    const userCtxName     = $("#userCtxName");
+    const userVolSlider   = $("#userVolSlider");
+    const userVolLabel    = $("#userVolLabel");
+    const userCtxMuteBtn  = $("#userCtxMuteBtn");
+
+    // Countdown elements
+    const countdownOverlay  = $("#countdownOverlay");
+    const countdownTimeEl   = $("#countdownTime");
+    const countdownMinInput = $("#countdownMinutes");
+    const startCountdownBtn = $("#startCountdownBtn");
+    const cancelCountdownBtn = $("#cancelCountdownBtn");
+    const countdownInputDiv = $("#countdownInput");
+
     // ---- State ----
     let ws = null;
     let userId = null;
@@ -63,6 +97,22 @@
     // HLS.js state
     let hlsInstance = null;
     let currentHlsUrl = "";  // active .m3u8 URL (empty when not using HLS)
+
+    // Media state (webcam + voice)
+    let localMediaStream = null;     // user's mic/webcam MediaStream
+    let micEnabled = false;
+    let webcamEnabled = false;
+    let isDeafened = false;
+    let mediaPeers = {};             // userId -> RTCPeerConnection
+    let mutedUsers = {};             // userId -> true (locally muted users)
+    let userVolumes = {};            // userId -> 0-100 volume level
+    let ctxMenuUserId = null;        // userId currently shown in context menu
+    let remoteMediaElements = {};    // userId -> { video, audio }
+    let currentUserList = [];        // latest user list from server
+
+    // Countdown state
+    let countdownInterval = null;
+    let countdownEndTime = 0;
 
     function isHost() { return userId && userId === hostId; }
 
@@ -468,9 +518,10 @@
 
         ws.onopen = () => {
             toast("Connected to room", "success");
-            // Tell server our display name
+            // Tell server our display name and picture
             const name = appData.dataset.userName || "Anonymous";
-            send({ type: "set_name", name: name });
+            const picture = appData.dataset.userPicture || "";
+            send({ type: "set_name", name: name, picture: picture });
         };
 
         ws.onmessage = (e) => {
@@ -525,6 +576,10 @@
                     rateSelect.value = data.playback_rate;
                 }
                 syncPlayback(data.current_time, data.is_playing);
+                // Handle active countdown
+                if (data.countdown_end && data.countdown_end > Date.now() / 1000) {
+                    startCountdownDisplay(data.countdown_end);
+                }
                 break;
 
             case "play":
@@ -644,6 +699,44 @@
                 if (screenStream && isHost() && data.viewers) {
                     data.viewers.forEach(vid => createPeerForViewer(vid));
                 }
+                break;
+
+            // ---- User list ----
+            case "user_list":
+                currentUserList = data.users || [];
+                renderUserList();
+                break;
+
+            // ---- Countdown ----
+            case "countdown_start":
+                startCountdownDisplay(data.countdown_end);
+                addChatEvent("started a countdown timer");
+                break;
+
+            case "countdown_cancel":
+                stopCountdownDisplay();
+                addChatEvent("cancelled the countdown");
+                break;
+
+            // ---- WebRTC media mesh (webcam + voice) ----
+            case "media_offer":
+                handleMediaOffer(data.offer, data.user_id, data.media_types || []);
+                break;
+
+            case "media_answer":
+                handleMediaAnswer(data.answer, data.user_id);
+                break;
+
+            case "media_ice":
+                handleMediaIce(data.candidate, data.user_id);
+                break;
+
+            case "media_state":
+                updateRemoteMediaState(data.user_id, data.webcam, data.mic);
+                break;
+
+            case "media_stop":
+                cleanupMediaPeer(data.user_id);
                 break;
         }
     }
@@ -850,6 +943,7 @@
             urlInputDiv.style.display      = tab.dataset.source === "url"    ? "" : "none";
             uploadInputDiv.style.display   = tab.dataset.source === "upload" ? "" : "none";
             if (screenShareInput) screenShareInput.style.display = tab.dataset.source === "screen" ? "" : "none";
+            if (countdownInputDiv) countdownInputDiv.style.display = tab.dataset.source === "countdown" ? "" : "none";
         });
     });
 
@@ -1384,6 +1478,635 @@
         videoEmpty.style.display = "";
         videoEmpty.querySelector("h3").textContent = "No Video Loaded";
         videoEmpty.querySelector("p").textContent = "Add a video URL or upload a file below to start watching.";
+    }
+
+    // ======================================================
+    //  Sidebar Tabs (Chat / People)
+    // ======================================================
+
+    const sidebarTabs = document.querySelectorAll(".sidebar-tab");
+    const chatPanel   = $("#chatPanel");
+    const peoplePanel = $("#peoplePanel");
+
+    sidebarTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            sidebarTabs.forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            const panel = tab.dataset.panel;
+            chatPanel.classList.toggle("active", panel === "chat");
+            peoplePanel.classList.toggle("active", panel === "people");
+        });
+    });
+
+    // ======================================================
+    //  Media Permissions
+    // ======================================================
+
+    async function checkMediaPermissions() {
+        if (!navigator.permissions || !navigator.permissions.query) {
+            // Browser doesn't support permissions API — hide banner, rely on getUserMedia prompt
+            if (mediaPermissions) mediaPermissions.style.display = "none";
+            return;
+        }
+        try {
+            const [mic, cam] = await Promise.all([
+                navigator.permissions.query({ name: "microphone" }),
+                navigator.permissions.query({ name: "camera" }),
+            ]);
+            updatePermBanner(mic.state, cam.state);
+            mic.addEventListener("change", () => updatePermBanner(mic.state, cam.state));
+            cam.addEventListener("change", () => updatePermBanner(mic.state, cam.state));
+        } catch {
+            // Permissions API not supported for these — hide banner
+            if (mediaPermissions) mediaPermissions.style.display = "none";
+        }
+    }
+
+    function updatePermBanner(micState, camState) {
+        if (!mediaPermissions) return;
+        const micOk = micState === "granted";
+        const camOk = camState === "granted";
+        if (micOk && camOk) {
+            mediaPermissions.classList.add("granted");
+            permStatusText.textContent = "Camera & mic allowed";
+            grantPermBtn.style.display = "none";
+        } else if (micState === "denied" || camState === "denied") {
+            mediaPermissions.classList.add("denied");
+            mediaPermissions.classList.remove("granted");
+            const denied = [];
+            if (micState === "denied") denied.push("mic");
+            if (camState === "denied") denied.push("camera");
+            permStatusText.textContent = denied.join(" & ") + " blocked — check browser settings";
+            grantPermBtn.textContent = "Retry";
+            grantPermBtn.style.display = "";
+        } else {
+            mediaPermissions.classList.remove("granted", "denied");
+            const needed = [];
+            if (!micOk) needed.push("mic");
+            if (!camOk) needed.push("camera");
+            permStatusText.textContent = (needed.join(" & ") || "Camera & mic") + " access needed";
+            grantPermBtn.textContent = "Allow Access";
+            grantPermBtn.style.display = "";
+        }
+    }
+
+    if (grantPermBtn) {
+        grantPermBtn.addEventListener("click", async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                // Immediately stop — we just wanted the permission grant
+                stream.getTracks().forEach(t => t.stop());
+                toast("Camera & microphone access granted", "success");
+                checkMediaPermissions();
+            } catch (err) {
+                if (err.name === "NotAllowedError") {
+                    toast("Permission denied — check your browser's site settings", "error");
+                } else {
+                    toast("Could not access media devices: " + err.message, "error");
+                }
+                checkMediaPermissions();
+            }
+        });
+    }
+
+    // Check on load
+    checkMediaPermissions();
+
+    // ======================================================
+    //  User Context Menu (right-click volume control)
+    // ======================================================
+
+    function showUserCtxMenu(e, uid) {
+        e.preventDefault();
+        const user = currentUserList.find(u => u.user_id === uid);
+        if (!user) return;
+
+        ctxMenuUserId = uid;
+        userCtxName.textContent = user.name;
+
+        const vol = userVolumes[uid] !== undefined ? userVolumes[uid] : 100;
+        userVolSlider.value = vol;
+        userVolLabel.textContent = vol + "%";
+
+        const isMuted = !!mutedUsers[uid];
+        userCtxMuteBtn.textContent = isMuted ? "Unmute" : "Mute";
+        userCtxMuteBtn.classList.toggle("muted", isMuted);
+
+        // Position near cursor, clamped to viewport
+        userCtxMenu.style.display = "";
+        const menuW = userCtxMenu.offsetWidth || 200;
+        const menuH = userCtxMenu.offsetHeight || 120;
+        let x = e.clientX;
+        let y = e.clientY;
+        if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 8;
+        if (y + menuH > window.innerHeight) y = window.innerHeight - menuH - 8;
+        if (x < 4) x = 4;
+        if (y < 4) y = 4;
+        userCtxMenu.style.left = x + "px";
+        userCtxMenu.style.top  = y + "px";
+    }
+
+    function hideUserCtxMenu() {
+        if (userCtxMenu) userCtxMenu.style.display = "none";
+        ctxMenuUserId = null;
+    }
+
+    // Close context menu on click elsewhere or Escape
+    document.addEventListener("click", (e) => {
+        if (userCtxMenu && !userCtxMenu.contains(e.target)) hideUserCtxMenu();
+    });
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") hideUserCtxMenu();
+    });
+
+    if (userVolSlider) {
+        userVolSlider.addEventListener("input", () => {
+            const vol = parseInt(userVolSlider.value, 10);
+            userVolLabel.textContent = vol + "%";
+            if (ctxMenuUserId) {
+                userVolumes[ctxMenuUserId] = vol;
+                applyUserVolume(ctxMenuUserId);
+            }
+        });
+    }
+
+    if (userCtxMuteBtn) {
+        userCtxMuteBtn.addEventListener("click", () => {
+            if (!ctxMenuUserId) return;
+            toggleMuteUser(ctxMenuUserId);
+            const isMuted = !!mutedUsers[ctxMenuUserId];
+            userCtxMuteBtn.textContent = isMuted ? "Unmute" : "Mute";
+            userCtxMuteBtn.classList.toggle("muted", isMuted);
+        });
+    }
+
+    function applyUserVolume(uid) {
+        const elems = remoteMediaElements[uid];
+        if (elems && elems.audio) {
+            const vol = userVolumes[uid] !== undefined ? userVolumes[uid] : 100;
+            elems.audio.volume = vol / 100;
+        }
+    }
+
+    // ======================================================
+    //  User List
+    // ======================================================
+
+    function renderUserList() {
+        if (!userListEl) return;
+        userListEl.innerHTML = "";
+        if (peopleCount) peopleCount.textContent = currentUserList.length;
+        viewerCount.textContent = currentUserList.length;
+
+        currentUserList.forEach(u => {
+            const item = document.createElement("div");
+            item.className = "user-list-item" + (u.user_id === userId ? " is-me" : "");
+
+            const avatar = document.createElement("img");
+            avatar.className = "user-list-avatar";
+            avatar.src = u.picture || "/static/assets/kitty.png";
+            avatar.alt = "";
+            avatar.referrerPolicy = "no-referrer";
+
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "user-list-name";
+            nameSpan.textContent = u.name + (u.user_id === userId ? " (You)" : "");
+
+            const badges = document.createElement("span");
+            badges.className = "user-list-badges";
+            if (u.is_host) {
+                const star = document.createElement("span");
+                star.className = "user-list-host-badge";
+                star.title = "Host";
+                star.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+                badges.appendChild(star);
+            }
+
+            // Mute button (can't mute yourself)
+            if (u.user_id !== userId) {
+                const muteUserBtn = document.createElement("button");
+                muteUserBtn.className = "user-list-mute-btn" + (mutedUsers[u.user_id] ? " muted" : "");
+                muteUserBtn.title = mutedUsers[u.user_id] ? "Unmute this user" : "Mute this user";
+                muteUserBtn.innerHTML = mutedUsers[u.user_id]
+                    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>'
+                    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+                muteUserBtn.addEventListener("click", () => toggleMuteUser(u.user_id));
+                badges.appendChild(muteUserBtn);
+            }
+
+            item.appendChild(avatar);
+            item.appendChild(nameSpan);
+            item.appendChild(badges);
+
+            // Right-click context menu for volume (not on yourself)
+            if (u.user_id !== userId) {
+                item.addEventListener("contextmenu", (e) => showUserCtxMenu(e, u.user_id));
+                // Show volume indicator if not default
+                const vol = userVolumes[u.user_id];
+                if (vol !== undefined && vol < 100) {
+                    const volBadge = document.createElement("span");
+                    volBadge.className = "user-list-vol-badge";
+                    volBadge.textContent = vol + "%";
+                    badges.appendChild(volBadge);
+                }
+            }
+
+            userListEl.appendChild(item);
+        });
+    }
+
+    function toggleMuteUser(uid) {
+        if (mutedUsers[uid]) {
+            delete mutedUsers[uid];
+        } else {
+            mutedUsers[uid] = true;
+        }
+        // Mute/unmute the remote audio for this user
+        applyMuteState(uid);
+        renderUserList();
+    }
+
+    function applyMuteState(uid) {
+        const elems = remoteMediaElements[uid];
+        if (elems && elems.audio) {
+            elems.audio.muted = !!(mutedUsers[uid] || isDeafened);
+            const vol = userVolumes[uid] !== undefined ? userVolumes[uid] : 100;
+            elems.audio.volume = vol / 100;
+        }
+    }
+
+    // ======================================================
+    //  Countdown Timer
+    // ======================================================
+
+    if (startCountdownBtn) {
+        startCountdownBtn.addEventListener("click", () => {
+            const mins = parseInt(countdownMinInput.value, 10);
+            if (!mins || mins < 1 || mins > 1440) {
+                toast("Enter 1–1440 minutes", "error");
+                return;
+            }
+            send({ type: "countdown_start", minutes: mins });
+        });
+    }
+
+    if (cancelCountdownBtn) {
+        cancelCountdownBtn.addEventListener("click", () => {
+            send({ type: "countdown_cancel" });
+        });
+    }
+
+    function startCountdownDisplay(endTime) {
+        countdownEndTime = endTime;
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        countdownOverlay.style.display = "flex";
+        if (cancelCountdownBtn) {
+            cancelCountdownBtn.style.display = isHost() ? "" : "none";
+        }
+
+        function tick() {
+            const remaining = Math.max(0, countdownEndTime - (Date.now() / 1000));
+            if (remaining <= 0) {
+                stopCountdownDisplay();
+                toast("Countdown finished!", "success");
+                // Auto-play if host
+                if (isHost() && isPlayerPaused()) {
+                    playerPlay();
+                }
+                return;
+            }
+            const h = Math.floor(remaining / 3600);
+            const m = Math.floor((remaining % 3600) / 60);
+            const s = Math.floor(remaining % 60);
+            if (h > 0) {
+                countdownTimeEl.textContent = `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+            } else {
+                countdownTimeEl.textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+            }
+        }
+        tick();
+        countdownInterval = setInterval(tick, 1000);
+    }
+
+    function stopCountdownDisplay() {
+        if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+        countdownOverlay.style.display = "none";
+        countdownEndTime = 0;
+    }
+
+    // ======================================================
+    //  WebRTC Media Mesh (Webcam + Voice Chat)
+    // ======================================================
+
+    const mediaRtcConfig = {
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    };
+
+    // Toggle Mic
+    if (toggleMicBtn) {
+        toggleMicBtn.addEventListener("click", async () => {
+            if (!micEnabled) {
+                await startLocalMedia(true, webcamEnabled);
+            } else {
+                // Disable mic track
+                if (localMediaStream) {
+                    localMediaStream.getAudioTracks().forEach(t => { t.enabled = false; t.stop(); });
+                    // Remove audio tracks from stream
+                    localMediaStream.getAudioTracks().forEach(t => localMediaStream.removeTrack(t));
+                }
+                micEnabled = false;
+                updateMediaUI();
+                send({ type: "media_state", webcam: webcamEnabled, mic: micEnabled });
+                // If both off, stop everything
+                if (!webcamEnabled) stopLocalMedia();
+            }
+        });
+    }
+
+    // Toggle Webcam
+    if (toggleWebcamBtn) {
+        toggleWebcamBtn.addEventListener("click", async () => {
+            if (!webcamEnabled) {
+                await startLocalMedia(micEnabled, true);
+            } else {
+                if (localMediaStream) {
+                    localMediaStream.getVideoTracks().forEach(t => { t.enabled = false; t.stop(); });
+                    localMediaStream.getVideoTracks().forEach(t => localMediaStream.removeTrack(t));
+                }
+                webcamEnabled = false;
+                updateMediaUI();
+                removeLocalWebcamPreview();
+                send({ type: "media_state", webcam: webcamEnabled, mic: micEnabled });
+                if (!micEnabled) stopLocalMedia();
+            }
+        });
+    }
+
+    // Toggle Deafen
+    if (toggleDeafenBtn) {
+        toggleDeafenBtn.addEventListener("click", () => {
+            isDeafened = !isDeafened;
+            deafenOffIcon.style.display = isDeafened ? "none" : "";
+            deafenOnIcon.style.display  = isDeafened ? "" : "none";
+            toggleDeafenBtn.classList.toggle("active", isDeafened);
+            // Mute/unmute all remote audio
+            for (const uid of Object.keys(remoteMediaElements)) {
+                applyMuteState(uid);
+            }
+            toast(isDeafened ? "Deafened" : "Undeafened", "info");
+        });
+    }
+
+    function updateMediaUI() {
+        micOnIcon.style.display  = micEnabled ? "" : "none";
+        micOffIcon.style.display = micEnabled ? "none" : "";
+        toggleMicBtn.classList.toggle("active", micEnabled);
+
+        camOnIcon.style.display  = webcamEnabled ? "" : "none";
+        camOffIcon.style.display = webcamEnabled ? "none" : "";
+        toggleWebcamBtn.classList.toggle("active", webcamEnabled);
+    }
+
+    async function startLocalMedia(wantAudio, wantVideo) {
+        const constraints = {};
+        if (wantAudio) constraints.audio = { echoCancellation: true, noiseSuppression: true };
+        if (wantVideo) constraints.video = { width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 15 } };
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+            if (!localMediaStream) {
+                localMediaStream = new MediaStream();
+            }
+
+            // Add new tracks
+            stream.getTracks().forEach(t => {
+                // Remove existing track of same kind
+                localMediaStream.getTracks().filter(et => et.kind === t.kind).forEach(et => {
+                    et.stop();
+                    localMediaStream.removeTrack(et);
+                });
+                localMediaStream.addTrack(t);
+            });
+
+            micEnabled = wantAudio;
+            webcamEnabled = wantVideo;
+            updateMediaUI();
+
+            // Show local webcam preview
+            if (webcamEnabled) showLocalWebcamPreview();
+
+            // Broadcast state
+            send({ type: "media_state", webcam: webcamEnabled, mic: micEnabled });
+
+            // Create/update peer connections with all other users
+            connectMediaPeers();
+
+        } catch (err) {
+            if (err.name === "NotAllowedError") {
+                toast("Permission denied for camera/microphone", "error");
+            } else {
+                toast("Could not access media device: " + err.message, "error");
+            }
+        }
+    }
+
+    function stopLocalMedia() {
+        if (localMediaStream) {
+            localMediaStream.getTracks().forEach(t => t.stop());
+            localMediaStream = null;
+        }
+        micEnabled = false;
+        webcamEnabled = false;
+        updateMediaUI();
+        removeLocalWebcamPreview();
+
+        // Close all media peer connections
+        for (const uid of Object.keys(mediaPeers)) {
+            mediaPeers[uid].close();
+            delete mediaPeers[uid];
+        }
+        send({ type: "media_stop" });
+    }
+
+    function showLocalWebcamPreview() {
+        removeLocalWebcamPreview();
+        const container = document.createElement("div");
+        container.className = "webcam-tile";
+        container.id = "localWebcam";
+        const video = document.createElement("video");
+        video.srcObject = localMediaStream;
+        video.muted = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        const label = document.createElement("span");
+        label.className = "webcam-label";
+        label.textContent = "You";
+        container.appendChild(video);
+        container.appendChild(label);
+        webcamGrid.appendChild(container);
+    }
+
+    function removeLocalWebcamPreview() {
+        const el = document.getElementById("localWebcam");
+        if (el) el.remove();
+    }
+
+    function connectMediaPeers() {
+        // Create offers to all users we know about
+        currentUserList.forEach(u => {
+            if (u.user_id === userId) return;
+            if (mediaPeers[u.user_id]) return; // already connected
+            createMediaPeer(u.user_id, true);
+        });
+    }
+
+    function createMediaPeer(remoteId, isInitiator) {
+        if (mediaPeers[remoteId]) {
+            mediaPeers[remoteId].close();
+        }
+
+        const pc = new RTCPeerConnection(mediaRtcConfig);
+        mediaPeers[remoteId] = pc;
+
+        // Add local tracks if we have them
+        if (localMediaStream) {
+            localMediaStream.getTracks().forEach(track => {
+                pc.addTrack(track, localMediaStream);
+            });
+        }
+
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                send({ type: "media_ice", target: remoteId, candidate: e.candidate });
+            }
+        };
+
+        pc.ontrack = (e) => {
+            handleRemoteTrack(remoteId, e.streams[0], e.track);
+        };
+
+        pc.onconnectionstatechange = () => {
+            if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+                pc.close();
+                delete mediaPeers[remoteId];
+            }
+        };
+
+        if (isInitiator) {
+            pc.createOffer().then(offer => {
+                return pc.setLocalDescription(offer);
+            }).then(() => {
+                const mediaTypes = [];
+                if (micEnabled) mediaTypes.push("audio");
+                if (webcamEnabled) mediaTypes.push("video");
+                send({ type: "media_offer", target: remoteId, offer: pc.localDescription, media_types: mediaTypes });
+            }).catch(() => {});
+        }
+
+        return pc;
+    }
+
+    function handleRemoteTrack(remoteId, stream, track) {
+        if (!remoteMediaElements[remoteId]) {
+            remoteMediaElements[remoteId] = {};
+        }
+
+        if (track.kind === "video") {
+            // Create or update webcam tile
+            let tileId = "webcam-" + remoteId;
+            let tile = document.getElementById(tileId);
+            if (!tile) {
+                tile = document.createElement("div");
+                tile.className = "webcam-tile";
+                tile.id = tileId;
+                const video = document.createElement("video");
+                video.autoplay = true;
+                video.playsInline = true;
+                video.srcObject = stream;
+                const label = document.createElement("span");
+                label.className = "webcam-label";
+                const user = currentUserList.find(u => u.user_id === remoteId);
+                label.textContent = user ? user.name : "User";
+                tile.appendChild(video);
+                tile.appendChild(label);
+                webcamGrid.appendChild(tile);
+                remoteMediaElements[remoteId].video = video;
+            } else {
+                const video = tile.querySelector("video");
+                if (video) {
+                    video.srcObject = stream;
+                    remoteMediaElements[remoteId].video = video;
+                }
+            }
+        }
+
+        if (track.kind === "audio") {
+            let audio = remoteMediaElements[remoteId].audio;
+            if (!audio) {
+                audio = document.createElement("audio");
+                audio.autoplay = true;
+                document.body.appendChild(audio);
+                remoteMediaElements[remoteId].audio = audio;
+            }
+            audio.srcObject = stream;
+            audio.muted = !!(mutedUsers[remoteId] || isDeafened);
+            const vol = userVolumes[remoteId] !== undefined ? userVolumes[remoteId] : 100;
+            audio.volume = vol / 100;
+        }
+    }
+
+    async function handleMediaOffer(offer, fromUserId, mediaTypes) {
+        const pc = createMediaPeer(fromUserId, false);
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        send({ type: "media_answer", target: fromUserId, answer: pc.localDescription });
+    }
+
+    async function handleMediaAnswer(answer, fromUserId) {
+        const pc = mediaPeers[fromUserId];
+        if (pc) {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+    }
+
+    async function handleMediaIce(candidate, fromUserId) {
+        const pc = mediaPeers[fromUserId];
+        if (pc && candidate) {
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (_) {}
+        }
+    }
+
+    function updateRemoteMediaState(uid, hasWebcam, hasMic) {
+        // Update UI indicators if needed
+        // Remove webcam tile if they stopped video
+        if (!hasWebcam) {
+            const tile = document.getElementById("webcam-" + uid);
+            if (tile) tile.remove();
+            if (remoteMediaElements[uid]) delete remoteMediaElements[uid].video;
+        }
+    }
+
+    function cleanupMediaPeer(uid) {
+        if (mediaPeers[uid]) {
+            mediaPeers[uid].close();
+            delete mediaPeers[uid];
+        }
+        // Remove webcam tile
+        const tile = document.getElementById("webcam-" + uid);
+        if (tile) tile.remove();
+        // Remove audio element
+        if (remoteMediaElements[uid]) {
+            if (remoteMediaElements[uid].audio) {
+                remoteMediaElements[uid].audio.srcObject = null;
+                remoteMediaElements[uid].audio.remove();
+            }
+            delete remoteMediaElements[uid];
+        }
     }
 
     // ---- Init ----

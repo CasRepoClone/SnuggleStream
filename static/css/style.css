@@ -49,6 +49,8 @@ body {
 a { color: var(--primary-h); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+.app { position: relative; z-index: 1; }
+
 /* ============================================
    Hero
    ============================================ */
@@ -553,6 +555,8 @@ input:focus, select:focus {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    position: relative;
+    z-index: 1;
 }
 
 /* Room header */
@@ -2084,4 +2088,28 @@ input:focus, select:focus {
 .minigame-topic-btn:disabled {
     opacity: .5;
     cursor: default;
+}
+
+/* ============================================
+   Background Particles (hearts & flowers)
+   ============================================ */
+.bg-particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.bg-particle {
+    position: absolute;
+    font-size: 1.2rem;
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: floatParticle linear infinite;
+}
+@keyframes floatParticle {
+    0%   { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(.7); }
+    8%   { opacity: .45; }
+    80%  { opacity: .3; }
+    100% { opacity: 0; transform: translate(calc(var(--dx) * 1px), calc(var(--dy) * 1px)) rotate(var(--rot)) scale(.5); }
 }

@@ -31,8 +31,8 @@
         el.style.left = startX + "%";
         el.style.top  = startY + "%";
         el.style.fontSize = size + "rem";
-        el.style.setProperty("--dx", dx);
-        el.style.setProperty("--dy", dy);
+        el.style.setProperty("--dx", dx + "px");
+        el.style.setProperty("--dy", dy + "px");
         el.style.setProperty("--rot", rot);
         el.style.animationDuration = dur + "s";
         el.style.animationDelay = rand(0, MAX_DUR) + "s";

@@ -7,6 +7,14 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.rooms import room_manager, VOTE_TIMEOUT_SECONDS
 from app.moderation import moderate_chat, chat_rate_limiter
+from app.minigames import (
+    get_game_state,
+    cleanup_game_state,
+    start_opt_in_vote,
+    handle_opt_in_vote,
+    handle_topic_vote,
+    stop_game,
+)
 from app.security import (
     sanitize_text,
     validate_current_time,
@@ -419,6 +427,31 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                     "type": "countdown_cancel",
                 })
 
+            # ---- Mini-games (bot) ----
+            elif msg_type == "minigame_start":
+                if user_id != room.host_id:
+                    await websocket.send_json({"type": "error", "message": "Only the host can start a mini-game"})
+                    continue
+                await start_opt_in_vote(room, validated_code, host_ws=websocket)
+
+            elif msg_type == "minigame_opt_in":
+                vote = bool(data.get("vote", False))
+                await handle_opt_in_vote(room, validated_code, user_id, vote)
+
+            elif msg_type == "minigame_topic_vote":
+                try:
+                    choice = int(data.get("choice", -1))
+                except (TypeError, ValueError):
+                    choice = -1
+                await handle_topic_vote(room, validated_code, user_id, choice)
+
+            elif msg_type == "minigame_stop":
+                # Only host can stop an active game
+                if user_id != room.host_id:
+                    await websocket.send_json({"type": "error", "message": "Only the host can stop the game"})
+                    continue
+                await stop_game(room, validated_code)
+
             # ---- WebRTC media (webcam + voice) mesh signaling ----
             elif msg_type == "media_offer":
                 target = str(data.get("target", ""))
@@ -479,6 +512,8 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         room.votes.pop(user_id, None)
         was_host = user_id == room.host_id
         room_deleted = room_manager.disconnect(validated_code, user_id)
+        if room_deleted:
+            cleanup_game_state(validated_code)
         if not room_deleted:
             # Broadcast media_stop for this user so peers clean up
             await room_manager.broadcast(validated_code, {

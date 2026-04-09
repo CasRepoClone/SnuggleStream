@@ -12,12 +12,13 @@
     <meta property="og:title" content="Join my SnuggleStream Watch Party!">
     <meta property="og:description" content="Come watch videos together on SnuggleStream — synchronized playback, real-time chat, and more.">
     <meta property="og:image" content="{{ base_url }}/static/assets/kitty.png">
-    <link rel="stylesheet" href="/static/css/style.css?v=11">
+    <link rel="stylesheet" href="/static/css/style.css?v=13">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 </head>
 <body class="room-body">
+    <script src="/static/js/particles.js" defer></script>
     <div class="room-app">
         <!-- Top Bar -->
         <header class="room-header">
@@ -191,6 +192,13 @@
                         <button class="btn btn-sm" id="startCountdownBtn">Start Timer</button>
                     </div>
                 </div>
+
+                <!-- Minigame Banner (visible to everyone when a game is active) -->
+                <div class="minigame-banner" id="minigameBanner" style="display:none;">
+                    <span class="minigame-banner-icon">🍻</span>
+                    <span class="minigame-banner-text" id="minigameBannerText"></span>
+                    <button class="btn btn-sm btn-stop-game" id="stopGameBtn" style="display:none;" title="Stop game">✕</button>
+                </div>
             </div>
 
             <!-- Sidebar Chat -->
@@ -227,6 +235,9 @@
                         <input type="text" id="nicknameInput" placeholder="Nickname" maxlength="30" class="chat-nickname">
                         <div class="chat-input-row">
                             <input type="text" id="chatInput" placeholder="Type a message..." maxlength="500" required>
+                            <button type="button" class="btn btn-sm btn-game" id="startGameBtn" title="Start a drinking game">
+                                🎲
+                            </button>
                             <button type="button" class="btn btn-sm btn-gif" id="gifBtn" title="Send a GIF">
                                 GIF
                             </button>

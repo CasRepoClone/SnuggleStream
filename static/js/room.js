@@ -719,6 +719,11 @@
                 addChatEvent("cancelled the countdown");
                 break;
 
+            // ---- Minigame (bot) ----
+            case "minigame":
+                handleMinigameMessage(data);
+                break;
+
             // ---- WebRTC media mesh (webcam + voice) ----
             case "media_offer":
                 handleMediaOffer(data.offer, data.user_id, data.media_types || []);
@@ -2108,6 +2113,184 @@
             }
             delete remoteMediaElements[uid];
         }
+    }
+
+    // ======================================================
+    //  Mini-games (Drinking Game Bot)
+    // ======================================================
+
+    const startGameBtn   = $("#startGameBtn");
+    const minigameBanner = $("#minigameBanner");
+    const minigameBannerText = $("#minigameBannerText");
+    const stopGameBtn    = $("#stopGameBtn");
+
+    // Start a drinking game vote (host only)
+    if (startGameBtn) {
+        startGameBtn.addEventListener("click", () => {
+            if (!isHost()) { toast("Only the host can start a mini-game", "error"); return; }
+            send({ type: "minigame_start" });
+        });
+    }
+
+    // Stop an active game (host only)
+    if (stopGameBtn) {
+        stopGameBtn.addEventListener("click", () => {
+            send({ type: "minigame_stop" });
+        });
+    }
+
+    function handleMinigameMessage(data) {
+        switch (data.subtype) {
+            case "opt_in_vote":
+                showOptInVote(data.timeout);
+                break;
+            case "opt_in_result":
+                // Remove opt-in vote card from chat
+                removeMinigameCard("opt-in-card");
+                break;
+            case "topic_vote":
+                showTopicVote(data.topics, data.timeout);
+                break;
+            case "topic_result":
+                removeMinigameCard("topic-card");
+                break;
+            case "game_active":
+                showGameBanner(data.topic);
+                break;
+            case "game_stopped":
+                hideGameBanner();
+                if (data.cooldown && isHost()) startGameCooldown(data.cooldown);
+                break;
+        }
+    }
+
+    function showOptInVote(timeout) {
+        const near = isNearBottom();
+        const card = document.createElement("div");
+        card.className = "chat-minigame-card opt-in-card";
+        card.innerHTML = `
+            <div class="minigame-card-header">
+                <span class="minigame-card-icon">🎲</span>
+                <span class="minigame-card-title">Drinking Game?</span>
+                <span class="minigame-card-timer" id="optInTimer">${timeout}s</span>
+            </div>
+            <p class="minigame-card-desc">Vote whether to start a drinking game!</p>
+            <div class="minigame-card-actions">
+                <button class="minigame-vote-btn yes" data-vote="yes">👍 Yes!</button>
+                <button class="minigame-vote-btn no" data-vote="no">👎 No</button>
+            </div>
+        `;
+        chatMessages.appendChild(card);
+
+        const timerEl = card.querySelector("#optInTimer");
+        let remaining = timeout;
+        const interval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(interval);
+                timerEl.textContent = "...";
+            } else {
+                timerEl.textContent = remaining + "s";
+            }
+        }, 1000);
+
+        card.querySelector('[data-vote="yes"]').addEventListener("click", () => {
+            send({ type: "minigame_opt_in", vote: true });
+            disableCardButtons(card);
+        });
+        card.querySelector('[data-vote="no"]').addEventListener("click", () => {
+            send({ type: "minigame_opt_in", vote: false });
+            disableCardButtons(card);
+        });
+
+        if (near) chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTopicVote(topics, timeout) {
+        const near = isNearBottom();
+        const card = document.createElement("div");
+        card.className = "chat-minigame-card topic-card";
+        let buttonsHtml = "";
+        topics.forEach((topic, idx) => {
+            buttonsHtml += `<button class="minigame-topic-btn" data-choice="${idx}">${escapeHtml(topic)}</button>`;
+        });
+        card.innerHTML = `
+            <div class="minigame-card-header">
+                <span class="minigame-card-icon">🍻</span>
+                <span class="minigame-card-title">Pick a Game!</span>
+                <span class="minigame-card-timer" id="topicTimer">${timeout}s</span>
+            </div>
+            <div class="minigame-topic-list">${buttonsHtml}</div>
+        `;
+        chatMessages.appendChild(card);
+
+        const timerEl = card.querySelector("#topicTimer");
+        let remaining = timeout;
+        const interval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(interval);
+                timerEl.textContent = "...";
+            } else {
+                timerEl.textContent = remaining + "s";
+            }
+        }, 1000);
+
+        card.querySelectorAll(".minigame-topic-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const choice = parseInt(btn.dataset.choice, 10);
+                send({ type: "minigame_topic_vote", choice: choice });
+                disableCardButtons(card);
+                btn.classList.add("voted");
+            });
+        });
+
+        if (near) chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function disableCardButtons(card) {
+        card.querySelectorAll("button").forEach(b => { b.disabled = true; });
+    }
+
+    function removeMinigameCard(className) {
+        const cards = chatMessages.querySelectorAll("." + className);
+        cards.forEach(c => {
+            c.querySelectorAll("button").forEach(b => { b.disabled = true; });
+        });
+    }
+
+    function showGameBanner(topic) {
+        if (minigameBanner) {
+            minigameBanner.style.display = "flex";
+            minigameBannerText.textContent = topic;
+            if (stopGameBtn) stopGameBtn.style.display = isHost() ? "" : "none";
+        }
+    }
+
+    function hideGameBanner() {
+        if (minigameBanner) {
+            minigameBanner.style.display = "none";
+            minigameBannerText.textContent = "";
+        }
+    }
+
+    let _gameCooldownInterval = null;
+    function startGameCooldown(seconds) {
+        if (!startGameBtn) return;
+        startGameBtn.disabled = true;
+        let remaining = seconds;
+        startGameBtn.textContent = remaining + "s";
+        _gameCooldownInterval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(_gameCooldownInterval);
+                _gameCooldownInterval = null;
+                startGameBtn.disabled = false;
+                startGameBtn.textContent = "🎲";
+            } else {
+                startGameBtn.textContent = remaining + "s";
+            }
+        }, 1000);
     }
 
     // ---- Init ----

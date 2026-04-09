@@ -49,6 +49,8 @@ body {
 a { color: var(--primary-h); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+.app { position: relative; z-index: 1; }
+
 /* ============================================
    Hero
    ============================================ */
@@ -553,6 +555,8 @@ input:focus, select:focus {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    position: relative;
+    z-index: 1;
 }
 
 /* Room header */
@@ -1940,4 +1944,172 @@ input:focus, select:focus {
     .webcam-tile {
         width: 90px;
     }
+}
+
+/* ============================================
+   Mini-game (Drinking Game Bot)
+   ============================================ */
+
+/* Banner above video */
+.minigame-banner {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem .8rem;
+    background: linear-gradient(135deg, #3d1a35, #2e2129);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    margin-top: .4rem;
+    animation: fadeIn .3s ease-out;
+}
+.minigame-banner-icon { font-size: 1.2rem; }
+.minigame-banner-text {
+    flex: 1;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--primary-h);
+}
+.btn-stop-game {
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    cursor: pointer;
+    border-radius: 6px;
+    padding: .15rem .5rem;
+    font-size: .8rem;
+    transition: background .2s;
+}
+.btn-stop-game:hover { background: rgba(240,111,126,.15); }
+
+/* Dice button in chat input */
+.btn-game {
+    font-size: 1rem;
+    padding: .4rem .5rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    transition: border-color .2s, background .2s;
+}
+.btn-game:hover {
+    border-color: var(--accent);
+    background: var(--surface);
+}
+
+/* Vote cards in chat */
+.chat-minigame-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .6rem .8rem;
+    margin: .5rem 0;
+    animation: fadeIn .25s ease-out;
+}
+.minigame-card-header {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-bottom: .4rem;
+}
+.minigame-card-icon { font-size: 1.1rem; }
+.minigame-card-title {
+    flex: 1;
+    font-weight: 700;
+    font-size: .88rem;
+    color: var(--primary-h);
+}
+.minigame-card-timer {
+    font-size: .75rem;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+}
+.minigame-card-desc {
+    font-size: .82rem;
+    color: var(--text-dim);
+    margin-bottom: .5rem;
+}
+.minigame-card-actions {
+    display: flex;
+    gap: .4rem;
+}
+
+/* Opt-in yes/no buttons */
+.minigame-vote-btn {
+    flex: 1;
+    padding: .5rem .6rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: .85rem;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+}
+.minigame-vote-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    background: var(--bg-card);
+}
+.minigame-vote-btn.yes:hover:not(:disabled) { border-color: var(--green); }
+.minigame-vote-btn.no:hover:not(:disabled) { border-color: var(--red); }
+.minigame-vote-btn:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+/* Topic vote buttons */
+.minigame-topic-list {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+.minigame-topic-btn {
+    width: 100%;
+    padding: .5rem .7rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    font-size: .82rem;
+    font-family: var(--font);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+}
+.minigame-topic-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--bg-card);
+}
+.minigame-topic-btn.voted {
+    border-color: var(--primary);
+    background: rgba(242, 160, 191, .12);
+}
+.minigame-topic-btn:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+/* ============================================
+   Background Particles (hearts & flowers)
+   ============================================ */
+.bg-particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.bg-particle {
+    position: absolute;
+    font-size: 1.2rem;
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: floatParticle linear infinite;
+}
+@keyframes floatParticle {
+    0%   { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(.7); }
+    8%   { opacity: .45; }
+    80%  { opacity: .3; }
+    100% { opacity: 0; transform: translate(calc(var(--dx) * 1px), calc(var(--dy) * 1px)) rotate(var(--rot)) scale(.5); }
 }

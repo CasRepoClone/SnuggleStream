@@ -1,48 +1,46 @@
-/* Background hearts & flowers particle animation — Web Animations API */
+/* Background hearts & flowers — unique @keyframes per particle */
 (function () {
-    const EMOJIS = ["❤️","💗","💖","💕","🌸","🌺","🌷","🩷"];
-    const COUNT  = 18;
-    const MIN_DUR = 12000;
-    const MAX_DUR = 24000;
+    var EMOJIS  = ["\u2764\uFE0F","\uD83D\uDC97","\uD83D\uDC96","\uD83D\uDC95","\uD83C\uDF38","\uD83C\uDF3A","\uD83C\uDF37","\uD83E\uDE77"];
+    var COUNT   = 18;
+    var MIN_DUR = 12;
+    var MAX_DUR = 24;
 
-    const container = document.createElement("div");
+    function rand(a, b) { return Math.random() * (b - a) + a; }
+
+    var container = document.createElement("div");
     container.className = "bg-particles";
     container.setAttribute("aria-hidden", "true");
     document.body.prepend(container);
 
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-
-    function launch(el) {
-        var startX = rand(-5, 30) + "%";
-        var startY = rand(-5, 20) + "%";
-        var dx     = rand(300, 900);
-        var dy     = rand(400, 1000);
-        var rot    = Math.floor(rand(-120, 120));
-        var dur    = rand(MIN_DUR, MAX_DUR);
-
-        el.style.left = startX;
-        el.style.top  = startY;
-
-        var anim = el.animate([
-            { opacity: 0, transform: "translate(0,0) rotate(0deg) scale(.7)" },
-            { opacity: 0.45, transform: "translate(" + (dx * 0.08) + "px," + (dy * 0.08) + "px) rotate(" + (rot * 0.08) + "deg) scale(.68)", offset: 0.08 },
-            { opacity: 0.3, transform: "translate(" + (dx * 0.8) + "px," + (dy * 0.8) + "px) rotate(" + (rot * 0.8) + "deg) scale(.54)", offset: 0.8 },
-            { opacity: 0, transform: "translate(" + dx + "px," + dy + "px) rotate(" + rot + "deg) scale(.5)" }
-        ], { duration: dur, easing: "linear" });
-
-        anim.onfinish = function () { launch(el); };
-    }
+    var css = "";
 
     for (var i = 0; i < COUNT; i++) {
+        var dx  = Math.round(rand(300, 900));
+        var dy  = Math.round(rand(400, 1000));
+        var rot = Math.round(rand(-120, 120));
+        var dur = rand(MIN_DUR, MAX_DUR).toFixed(1);
+        var del = rand(0, MAX_DUR).toFixed(1);
+        var sx  = rand(-5, 30).toFixed(2);
+        var sy  = rand(-5, 20).toFixed(2);
+        var fs  = rand(0.9, 1.6).toFixed(2);
+        var name = "p" + i;
+
+        css += "@keyframes " + name + "{" +
+            "0%{opacity:0;transform:translate(0,0) rotate(0deg) scale(.7)}" +
+            "8%{opacity:.45}" +
+            "80%{opacity:.3}" +
+            "100%{opacity:0;transform:translate(" + dx + "px," + dy + "px) rotate(" + rot + "deg) scale(.5)}" +
+        "}";
+
         var el = document.createElement("span");
         el.className = "bg-particle";
         el.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-        el.style.fontSize = rand(0.9, 1.6) + "rem";
+        el.style.cssText = "left:" + sx + "%;top:" + sy + "%;font-size:" + fs + "rem;" +
+            "animation:" + name + " " + dur + "s linear " + del + "s infinite";
         container.appendChild(el);
-
-        // Stagger initial starts
-        (function (e, delay) {
-            setTimeout(function () { launch(e); }, delay);
-        })(el, rand(0, MAX_DUR));
     }
+
+    var style = document.createElement("style");
+    style.textContent = css;
+    document.head.appendChild(style);
 })();

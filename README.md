@@ -20,6 +20,10 @@
 - **Help Tooltips** — Hover over `?` icons next to settings for contextual help with animated, backdrop-blurred tooltips
 - **Keyboard Shortcuts** — Space/K (play/pause), F (fullscreen), M (mute), Arrow keys (±10s seek)
 - **Responsive Design** — Works on desktop and mobile
+- **Full Legal & Compliance Pages** — Separate Privacy Policy, Terms of Service, and Cookie Policy pages for AdSense and GDPR/CCPA compliance
+- **About & Contact Pages** — Brand story and contact information for trust signals
+- **Long-Distance Relationship Content** — Six original articles on LDR topics (date night ideas, staying connected, movie picks, and more)
+- **SEO & Sitemap** — Full sitemap with all 12 public pages, structured data (JSON-LD), Open Graph tags, and proper canonical URLs
 
 ## Project Structure
 
@@ -48,7 +52,20 @@ SnuggleStream/
 │       └── room.js         # Room page + video sync + screen share
 ├── templates/
 │   ├── index.html          # Home page (create/join)
-│   └── room.html           # Room page (player + chat)
+│   ├── room.html           # Room page (player + chat)
+│   ├── login.html          # Google OAuth sign-in
+│   ├── privacy.html        # Privacy Policy
+│   ├── terms.html          # Terms of Service
+│   ├── cookies.html        # Cookie Policy
+│   ├── about.html          # About Us
+│   ├── contact.html        # Contact page
+│   └── articles/           # LDR content articles (6 pages)
+│       ├── virtual-date-night-ideas.html
+│       ├── staying-connected-long-distance.html
+│       ├── why-watch-parties-matter-ldr-couples.html
+│       ├── best-movies-long-distance-date-night.html
+│       ├── long-distance-activities-beyond-video-calls.html
+│       └── making-movie-nights-special-miles-apart.html
 ├── media/                  # Uploaded videos (auto-created, gitignored)
 ├── requirements.txt
 ├── run.py                  # Dev entry point
@@ -152,14 +169,21 @@ The host can share their screen or a specific application window directly with a
 ## API Endpoints
 
 | Method | Path | Description |
-|---|---|---|
+| --- | --- | --- |
 | `GET` | `/` | Home page |
 | `GET` | `/room/{code}` | Room page |
+| `GET` | `/about` | About Us |
+| `GET` | `/contact` | Contact page |
+| `GET` | `/privacy` | Privacy Policy |
+| `GET` | `/terms` | Terms of Service |
+| `GET` | `/cookies` | Cookie Policy |
+| `GET` | `/articles/{slug}` | Content articles (6 LDR topics) |
 | `POST` | `/api/rooms` | Create a room |
 | `GET` | `/api/rooms` | List active rooms |
 | `GET` | `/api/rooms/{code}` | Get room info |
 | `POST` | `/api/upload` | Upload a video file |
 | `WS` | `/ws/{room_code}` | WebSocket sync connection |
+| `GET` | `/sitemap.xml` | XML sitemap (12 pages) |
 
 ## License
 
@@ -227,8 +251,5 @@ Push to `main` and the workflow will:
 5. `systemctl restart snugglestream`
 
 #### This code falls under
-<p>GNU Affero General Public License v3</p>
 
-
-
-e
+GNU Affero General Public License v3

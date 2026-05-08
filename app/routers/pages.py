@@ -45,10 +45,70 @@ async def sitemap_xml():
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>{BASE_URL}/about</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/contact</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/privacy</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>{BASE_URL}/terms</loc>
     <lastmod>{now}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/cookies</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/articles/virtual-date-night-ideas</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/articles/staying-connected-long-distance</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/articles/why-watch-parties-matter-ldr-couples</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/articles/best-movies-long-distance-date-night</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/articles/long-distance-activities-beyond-video-calls</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/articles/making-movie-nights-special-miles-apart</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>"""
     return Response(content=xml, media_type="application/xml")
@@ -74,6 +134,50 @@ async def home(request: Request):
 async def terms(request: Request):
     return templates.TemplateResponse("terms.html", {"request": request, "base_url": BASE_URL.rstrip("/")})
 
+
+@router.get("/privacy", response_class=HTMLResponse)
+async def privacy(request: Request):
+    return templates.TemplateResponse("privacy.html", {"request": request, "base_url": BASE_URL.rstrip("/")})
+
+
+@router.get("/cookies", response_class=HTMLResponse)
+async def cookies_page(request: Request):
+    return templates.TemplateResponse("cookies.html", {"request": request, "base_url": BASE_URL.rstrip("/")})
+
+
+@router.get("/about", response_class=HTMLResponse)
+async def about(request: Request):
+    return templates.TemplateResponse("about.html", {"request": request, "base_url": BASE_URL.rstrip("/")})
+
+
+@router.get("/contact", response_class=HTMLResponse)
+async def contact(request: Request):
+    return templates.TemplateResponse("contact.html", {"request": request, "base_url": BASE_URL.rstrip("/")})
+
+
+# --------------- Article Routes ---------------
+
+ARTICLE_SLUGS = [
+    "virtual-date-night-ideas",
+    "staying-connected-long-distance",
+    "why-watch-parties-matter-ldr-couples",
+    "best-movies-long-distance-date-night",
+    "long-distance-activities-beyond-video-calls",
+    "making-movie-nights-special-miles-apart",
+]
+
+
+@router.get("/articles/{slug}", response_class=HTMLResponse)
+async def article(request: Request, slug: str):
+    if slug not in ARTICLE_SLUGS:
+        raise HTTPException(404, "Article not found")
+    return templates.TemplateResponse(
+        f"articles/{slug}.html",
+        {"request": request, "base_url": BASE_URL.rstrip("/")},
+    )
+
+
+# --------------- Room & Media Routes ---------------
 
 @router.get("/room/{code}", response_class=HTMLResponse)
 async def room_page(request: Request, code: str):

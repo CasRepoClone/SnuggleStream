@@ -580,6 +580,83 @@ input:focus, select:focus {
 .tos-back a { color: var(--primary); text-decoration: none; }
 .tos-back a:hover { text-decoration: underline; }
 
+/* Article pages */
+.article-content { max-width: 740px; padding: 2rem 1.5rem 3rem; }
+.article-content h2 { font-size: 1.8rem; margin-bottom: .5rem; color: var(--text); line-height: 1.3; }
+.article-content .article-meta { font-size: .82rem; color: var(--text-dim); margin-bottom: .5rem; }
+.article-content h3 { font-size: 1.15rem; margin: 2rem 0 .6rem; color: var(--primary); }
+.article-content p { color: var(--text-dim); line-height: 1.8; margin-bottom: 1rem; }
+.article-content ul, .article-content ol { color: var(--text-dim); line-height: 1.8; margin: .5rem 0 1.5rem 1.5rem; }
+.article-content li { margin-bottom: .5rem; }
+.article-content strong { color: var(--text); }
+.article-content a { color: var(--primary-h); }
+.article-content .article-cta {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 1.5rem;
+    margin: 2.5rem 0;
+    text-align: center;
+}
+.article-content .article-cta h3 { margin-top: 0; color: var(--text); }
+.article-content .article-cta p { color: var(--text-dim); margin-bottom: .5rem; }
+
+/* Enhanced Footer */
+.footer-enhanced {
+    border-top: 1px solid var(--border);
+    padding: 3rem 0 1.5rem;
+    color: var(--text-dim);
+    font-size: .85rem;
+    text-align: left;
+}
+.footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+.footer-col h4 {
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .8rem;
+}
+.footer-col p {
+    font-size: .82rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+}
+.footer-col nav {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+}
+.footer-col nav a {
+    color: var(--text-dim);
+    font-size: .82rem;
+    text-decoration: none;
+    transition: color .2s;
+}
+.footer-col nav a:hover {
+    color: var(--primary);
+    text-decoration: none;
+}
+.footer-bottom {
+    border-top: 1px solid var(--border);
+    padding-top: 1.2rem;
+    text-align: center;
+    font-size: .78rem;
+    color: var(--text-dim);
+}
+@media (max-width: 768px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+    .footer-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+}
+
 /* ============================================
    Overlay / Spinner
    ============================================ */
